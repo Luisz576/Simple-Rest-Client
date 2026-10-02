@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple REST Client</title>
+    <link rel="stylesheet" href="./styles/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Simple REST Client</h1>
+            <p class="subtitle">Make HTTP requests easily and efficiently</p>
+        </header>
+
+        <main>
+            <div class="request-container">
+                <aside class="request-sidebar">
+                    <div class="method-selector">
+                        <label for="method">HTTP Method:</label>
+                        <div class="method-buttons">
+                            <button type="button" class="method-btn get active" data-method="GET">GET</button>
+                            <button type="button" class="method-btn post" data-method="POST">POST</button>
+                            <button type="button" class="method-btn put" data-method="PUT">PUT</button>
+                            <button type="button" class="method-btn delete" data-method="DELETE">DELETE</button>
+                            <button type="button" class="method-btn patch" data-method="PATCH">PATCH</button>
+                            <button type="button" class="method-btn head" data-method="HEAD">HEAD</button>
+                            <button type="button" class="method-btn options" data-method="OPTIONS">OPTIONS</button>
+                        </div>
+                        <input type="hidden" id="method" value="GET">
+                    </div>
+
+                    <div class="url-input-group">
+                        <label for="url">URL:</label>
+                        <input type="text" id="url" placeholder="https://api.example.com/endpoint" class="url-input">
+                    </div>
+
+                    <div class="section query-section" id="querySection">
+                        <div class="section-header">
+                            <h3>Query Parameters</h3>
+                            <button type="button" class="add-btn" data-target="queryList">+ Add</button>
+                        </div>
+                        <div class="params-list" id="queryList">
+                            <!-- Dynamic query params here -->
+                        </div>
+                    </div>
+
+                    <div class="section headers-section" id="headersSection">
+                        <div class="section-header">
+                            <h3>Headers</h3>
+                            <button type="button" class="add-btn" data-target="headersList">+ Add</button>
+                        </div>
+                        <div class="params-list" id="headersList">
+                            <!-- Dynamic headers here -->
+                        </div>
+                    </div>
+
+                    <div class="section body-section" id="bodySection">
+                        <div class="section-header">
+                            <h3>Body</h3>
+                            <select id="bodyType" class="body-type-selector">
+                                <option value="none">None</option>
+                                <option value="json">JSON</option>
+                                <option value="multipart">Multipart File</option>
+                            </select>
+                        </div>
+
+                        <div class="body-content">
+                            <div class="body-none" id="bodyNone">
+                                <p class="body-placeholder">No body for this request</p>
+                            </div>
+
+                            <div class="body-json" id="bodyJson" style="display: none;">
+                                <textarea id="jsonBody" class="json-textarea" placeholder="Enter JSON here..."></textarea>
+                            </div>
+
+                            <div class="body-multipart" id="bodyMultipart" style="display: none;">
+                                <label for="fileUpload" class="file-upload">
+                                    <div class="upload-area">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+                                        <p>Drag and drop a file</p>
+                                        <p class="upload-hint">or click to select</p>
+                                    </div>
+                                    <input type="file" id="fileUpload" class="file-input" hidden>
+                                </label>
+                                <div id="selectedFile" class="selected-file" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="submit-container">
+                        <button type="submit" class="submit-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                            Send Request
+                        </button>
+                    </div>
+                </aside>
+
+                <section class="response-container">
+                    <div class="response-header">
+                        <h2>Response</h2>
+                    </div>
+                    <div class="response-content">
+                        <div class="response-placeholder">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            <p>Response will appear here</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>Developed by Luisz576</p>
+        </footer>
+    </div>
+
+    <script src="./scripts/rest_client.js"></script>
+    <script src="./scripts/scripts.js"></script>
+</body>
+</html>
