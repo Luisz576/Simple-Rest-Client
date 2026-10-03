@@ -178,20 +178,21 @@ document.addEventListener('DOMContentLoaded', () => {
             nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
 
             const editBtn = document.createElement('button')
-            editBtn.innerHTML = '✏️'
+            editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
             editBtn.type = 'button'
             editBtn.style.cssText = `
                 background: var(--bg-tertiary);
                 border: 1px solid var(--border-color);
-                border-radius: 4px;
-                width: 20px;
-                height: 20px;
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 12px;
-                transition: var(--transition);
+                font-size: 14px;
+                transition: all 0.2s ease;
+                color: var(--text-secondary);
             `
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation()
@@ -199,29 +200,54 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             editBtn.title = 'Edit'
 
+            // Add hover effect for edit button
+            editBtn.addEventListener('mouseenter', () => {
+                editBtn.style.transform = 'scale(1.1)';
+                editBtn.style.backgroundColor = 'var(--primary-color)';
+                editBtn.style.borderColor = 'var(--primary-color)';
+                editBtn.style.color = 'white';
+            })
+            editBtn.addEventListener('mouseleave', () => {
+                editBtn.style.transform = 'scale(1)';
+                editBtn.style.backgroundColor = 'var(--bg-tertiary)';
+                editBtn.style.borderColor = 'var(--border-color)';
+                editBtn.style.color = 'var(--text-secondary)';
+            })
+
             const deleteBtn = document.createElement('button')
             deleteBtn.innerHTML = '×'
             deleteBtn.type = 'button'
             deleteBtn.style.cssText = `
-                background: var(--error-color);
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                 border: none;
-                border-radius: 4px;
-                width: 20px;
-                height: 20px;
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
-                font-weight: bold;
+                font-size: 16px;
+                font-weight: 600;
                 color: white;
-                transition: var(--transition);
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
             `
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation()
                 deleteRequest(req.id)
             })
             deleteBtn.title = 'Delete'
+
+            // Add hover effect for delete button
+            deleteBtn.addEventListener('mouseenter', () => {
+                deleteBtn.style.transform = 'scale(1.1)';
+                deleteBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+            })
+            deleteBtn.addEventListener('mouseleave', () => {
+                deleteBtn.style.transform = 'scale(1)';
+                deleteBtn.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+            })
 
             const dragSpan = document.createElement('span')
             dragSpan.innerHTML = "¦¦"
@@ -829,6 +855,63 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 
     document.getElementById('saveBtn').addEventListener('click', saveRequest)
+
+    // Export function
+    function exportRequests() {
+        const dataStr = JSON.stringify(savedRequests, null, 2)
+        const dataBlob = new Blob([dataStr], { type: 'application/json' })
+        const url = URL.createObjectURL(dataBlob)
+        
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'requests-export.json'
+        link.click()
+        
+        URL.revokeObjectURL(url)
+        showSuccess('Requests exported successfully!')
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', exportRequests)
+
+    // Import function
+    function importRequests() {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0]
+            if (!file) return
+
+            const reader = new FileReader()
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result)
+                    
+                    if (!Array.isArray(importedData)) {
+                        throw new Error('Invalid file format')
+                    }
+
+                    if (confirm(`Import ${importedData.length} requests? This will replace existing requests.`)) {
+                        savedRequests = importedData.map((req, index) => ({
+                            ...req,
+                            id: index + 1
+                        }))
+                        appDb.saveSavedRequests(savedRequests)
+                        renderDrawerItems()
+                        showSuccess('Requests imported successfully!')
+                    }
+                } catch (error) {
+                    showError('Failed to import: ' + error.message)
+                }
+            }
+            reader.readAsText(file)
+        }
+        
+        input.click()
+    }
+
+    document.getElementById('importBtn').addEventListener('click', importRequests)
 
     initSavedRequests()
     renderDrawerItems()
