@@ -13,7 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const newId = Date.now() * 1000000
         const name = prompt('Enter request name:')
         if (name && name.trim()) {
-            const newRequest = { id: newId, name: name.trim(), config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+            const newIndex = getNewIndex()
+            const newRequest = { 
+                id: newId, 
+                name: name.trim(), 
+                pos_index: newIndex,
+                config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } 
+            }
             savedRequests.push(newRequest)
             saveSavedRequests()
             currentSelectedRequest = newRequest
@@ -22,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
             showSuccess('New Request')
             toggleDrawer()
         }
+    }
+
+    function getNewIndex() {
+        const maxIndex = Math.max(...savedRequests.map(req => req.pos_index ?? 0), 0)
+        return maxIndex + 1
     }
 
     function getCurrentRequestConfig() {
@@ -90,19 +101,20 @@ document.addEventListener('DOMContentLoaded', () => {
         
         saveSavedRequests()
         renderDrawerItems()
-        showSuccess('Request saved successfully!')
+        showSuccess('Request(s) saved successfully!')
     }
 
     function initSavedRequests() {
         const data = appDb.getSavedRequests()
-        if (data && data.length > 0) {
+        if (data && data != null && data.length > 0) {
             savedRequests = data
             currentSelectedRequest = savedRequests[0]
             loadRequest(savedRequests[0].id)
         } else {
             savedRequests = [
-                { id: Date.now() * 1000000, name: 'default', config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+                { id: Date.now() * 1000000, name: 'default', pos_index: 0, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
             ]
+            appDb.saveSavedRequests(savedRequests)
             currentSelectedRequest = savedRequests[0]
             loadRequest(savedRequests[0].id)
         }
