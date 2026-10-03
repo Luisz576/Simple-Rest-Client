@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        const cookie = requestCookieInput?.value || ''
+        const cookie = document.getElementById('cookieTokenInput')?.value || ''
 
         return {
             method,
@@ -415,14 +415,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSelectedRequest = req
 
         // Load the request configuration
-    const config = req.config || {
-        method: 'GET',
-        url: '',
-        params: {},
-        headers: {},
-        body: { type: 'none', content: null },
-        cookie: ''
-    }
+        const config = req.config || {
+            method: 'GET',
+            url: '',
+            params: {},
+            headers: {},
+            body: { type: 'none', content: null },
+            cookie: ''
+        }
 
           if (methodInput) methodInput.value = config.method || 'GET'
           if (urlInput) urlInput.value = config.url || ''
@@ -470,41 +470,42 @@ document.addEventListener('DOMContentLoaded', () => {
             })
         }
 
-    // Load cookie
-    if (requestCookieInput) {
-        requestCookieInput.value = config.cookie || ''
+        // Load cookie
+        const cookieTokenInput = document.getElementById('cookieTokenInput')
+        if (cookieTokenInput) {
+            cookieTokenInput.value = config.cookie || ''
 
-        const toggle = document.getElementById('enableCookieToggle')
-        if (toggle) {
-            toggle.checked = (config.cookie || '').length > 0
+            const toggle = document.getElementById('enableCookieToggle')
+            if (toggle) {
+                toggle.checked = (config.cookie || '').length > 0
+            }
         }
-    }
 
-    // Load body
-    if (bodyTypeSelector) {
-        bodyTypeSelector.value = config.body?.type || 'none'
-        const bodyType = bodyTypeSelector.value
-        const bodyNone = document.getElementById('bodyNone')
-        const bodyJson = document.getElementById('bodyJson')
-        const bodyMultipart = document.getElementById('bodyMultipart')
+        // Load body
+        if (bodyTypeSelector) {
+            bodyTypeSelector.value = config.body?.type || 'none'
+            const bodyType = bodyTypeSelector.value
+            const bodyNone = document.getElementById('bodyNone')
+            const bodyJson = document.getElementById('bodyJson')
+            const bodyMultipart = document.getElementById('bodyMultipart')
 
-        bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
-        bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
-        bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
+            bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
+            bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
+            bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
 
-        if (bodyType === 'json' && config.body?.content) {
-            const jsonBody = document.getElementById('jsonBody')
-            if (jsonBody) {
-                if (typeof config.body.content === 'object') {
-                    jsonBody.value = JSON.stringify(config.body.content, null, 2)
-                } else {
-                    jsonBody.value = config.body.content
+            if (bodyType === 'json' && config.body?.content) {
+                const jsonBody = document.getElementById('jsonBody')
+                if (jsonBody) {
+                    if (typeof config.body.content === 'object') {
+                        jsonBody.value = JSON.stringify(config.body.content, null, 2)
+                    } else {
+                        jsonBody.value = config.body.content
+                    }
                 }
             }
         }
-    }
 
-    renderDrawerItems()
+        renderDrawerItems()
     }
 
     function editRequestName(id) {
@@ -717,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const method = methodInput.value
         const url = urlInput.value.trim()
+        const processedUrl = processEnvVarsInString(url)
 
         // Validate method
         if (!method) {
@@ -727,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validate URL
         try {
-            new URL(url)
+            new URL(processedUrl)
         } catch (e) {
             showError('Invalid URL. Use format: https://api.example.com/endpoint')
             urlInput.focus()
@@ -740,12 +742,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const item of queryItems) {
                 const keyInput = item.querySelector('.key-input')
                 const valueInput = item.querySelector('.value-input')
-                if (!keyInput.value.trim()) {
+                const processedKey = processEnvVarsInString(keyInput.value)
+                const processedValue = processEnvVarsInString(valueInput.value)
+                if (!processedKey.trim()) {
                     showError('Please fill all Query Parameter keys')
                     keyInput.focus()
                     return false
                 }
-                if (!valueInput.value.trim()) {
+                if (!processedValue.trim()) {
                     showError('Please fill all Query Parameter values')
                     valueInput.focus()
                     return false
@@ -759,12 +763,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const item of headerItems) {
                 const keyInput = item.querySelector('.key-input')
                 const valueInput = item.querySelector('.value-input')
-                if (!keyInput.value.trim()) {
+                const processedKey = processEnvVarsInString(keyInput.value)
+                const processedValue = processEnvVarsInString(valueInput.value)
+                if (!processedKey.trim()) {
                     showError('Please fill all Header keys')
                     keyInput.focus()
                     return false
                 }
-                if (!valueInput.value.trim()) {
+                if (!processedValue.trim()) {
                     showError('Please fill all Header values')
                     valueInput.focus()
                     return false
@@ -871,13 +877,14 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault()
             const method = methodInput.value
             const url = urlInput.value.trim()
+            const processedUrl = processEnvVarsInString(url)
 
             // Build query params
             const queryParams = {}
             document.querySelectorAll('#queryList .param-item').forEach(item => {
                 const key = item.querySelector('.key-input').value
                 const value = item.querySelector('.value-input').value
-                queryParams[key] = value
+                queryParams[processEnvVarsInString(key)] = processEnvVarsInString(value)
             })
 
             // Build headers
@@ -885,12 +892,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#headersList .param-item').forEach(item => {
                 const key = item.querySelector('.key-input').value
                 const value = item.querySelector('.value-input').value
-                requestHeaders[key] = value
+                requestHeaders[processEnvVarsInString(key)] = processEnvVarsInString(value)
             })
 
             // Prepare final URL with query params
-            const finalUrl = queryParams && Object.keys(queryParams).length > 0 ? 
-                `${url}?${new URLSearchParams(queryParams).toString()}` : url
+            const finalUrl = Object.keys(queryParams).length > 0 ? 
+                `${processedUrl}?${new URLSearchParams(queryParams).toString()}` : processedUrl
 
             try {
                 let requestBody = undefined
@@ -914,23 +921,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 requestHeaders['Content-Type'] = contentType
 
-            const cookie = requestCookieInput?.value || ''
+                const cookie = processEnvVarsInString(document.getElementById('cookieTokenInput')?.value || '')
 
-            const response = await restClient.request(method, finalUrl, requestBody, requestHeaders, {
-                cookie
-            })
+                const response = await restClient.request(method, finalUrl, requestBody, requestHeaders, {
+                    cookie
+                })
 
-            if (response.status >= 400) {
+                if (response.status >= 400) {
                     const errorMessage = `${response.statusText} (${response.status})`
                     showWarning('Request failed', 5000)
-                displayResponse({
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorMessage,
-                    setCookie: response.setCookie,
-                    cookie: cookie
-                })
-            } else {
+                    displayResponse({
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorMessage,
+                        setCookie: response.setCookie,
+                        cookie: cookie
+                    })
+                } else {
                     showSuccess('Request sent successfully!', 2000)
                     displayResponse(response)
                 }
@@ -1005,20 +1012,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('importBtn').addEventListener('click', importRequests)
     
-    const requestCookieInput = document.getElementById('cookieTokenInput')
     const enableCookieToggle = document.getElementById('enableCookieToggle')
     const loadCookieBtn = document.getElementById('loadCookieBtn')
     const clearSessionBtn = document.getElementById('clearSessionBtn')
 
     enableCookieToggle.addEventListener('change', (e) => {
-        const authCookieInput = document.getElementById('authCookieInput')
+        const cookieInput = document.getElementById('cookieTokenInput')
         if (e.target.checked) {
-            authCookieInput.style.display = 'flex'
-            if (!requestCookieInput.value) {
+            cookieInput.style.display = 'flex'
+            if (!cookieInput.value) {
                 loadCookieBtn.click()
             }
         } else {
-            authCookieInput.style.display = 'none'
+            cookieInput.style.display = 'none'
         }
     })
 
@@ -1142,7 +1148,33 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 
     function processEnvVarsInString(str) {
-        // TODO: return str with {{env}} replaced by env var, if env key not found replace by nothing
+        if (!str || typeof str !== 'string') return str;
+        
+        const validEnvVars = []
+        const usedKeys = new Set()
+        
+        for(let k in envVars){
+            const env = envVars[k]
+            const key = env.key.trim()
+            
+            // Skip if key is empty
+            if (!key) continue
+            
+            // Skip if key is duplicate
+            if (usedKeys.has(key)) continue
+            
+            usedKeys.add(key)
+            validEnvVars.push(env)
+        }
+        
+        let result = str;
+        
+        validEnvVars.forEach(env => {
+            const pattern = new RegExp(`\\{\\{${env.key}\\}\\}`, 'g');
+            result = result.replace(pattern, env.value);
+        });
+        
+        return result;
     }
 
     // Validate environment variables
@@ -1212,18 +1244,19 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCookieBtn.addEventListener('click', () => {
         const token = getCurrentSessionToken()
         if (token) {
-            requestCookieInput.value = token
+            document.getElementById('cookieTokenInput').value = token
             enableCookieToggle.checked = true
-            document.getElementById('authCookieInput').style.display = 'flex'
+            document.getElementById('cookieTokenInput').style.display = 'flex'
             showSuccess('Session cookie loaded from storage')
         } else {
             showWarning('No session token found')
         }
     })
 
-    requestCookieInput.addEventListener('blur', () => {
-        if (requestCookieInput.value.trim()) {
-            saveSessionToken(requestCookieInput.value.trim())
+    const cookieTokenInput = document.getElementById('cookieTokenInput')
+    cookieTokenInput.addEventListener('blur', () => {
+        if (cookieTokenInput.value.trim()) {
+            saveSessionToken(cookieTokenInput.value.trim())
             showSuccess('Session token saved')
         }
     })
@@ -1231,22 +1264,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clearSessionBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear the session token?')) {
             clearSessionToken()
-            requestCookieInput.value = ''
+            document.getElementById('cookieTokenInput').value = ''
             enableCookieToggle.checked = false
-            document.getElementById('authCookieInput').style.display = 'none'
             showSuccess('Session cleared')
-        }
-    })
-
-    enableCookieToggle.addEventListener('change', (e) => {
-        const authCookieInput = document.getElementById('authCookieInput')
-        if (e.target.checked) {
-            authCookieInput.style.display = 'flex'
-            if (!requestCookieInput.value) {
-                loadCookieBtn.click()
-            }
-        } else {
-            authCookieInput.style.display = 'none'
         }
     })
 
