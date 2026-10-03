@@ -9,6 +9,7 @@ A lightweight REST client application built with vanilla web technologies (HTML,
 - **Request Body**: Support for JSON and multipart/form-data (file uploads)
 - **Response Display**: View response status, headers, and body
 - **Error Handling**: Clear error messages for failed requests
+- **Toast Notifications**: Visual feedback with showSuccess, showError, and showWarning functions
 
 ## Project Structure
 
@@ -18,6 +19,8 @@ simple-rest-client/
 ├── styles.css          # Modern and beautiful styling
 ├── rest_client.js      # Base class for HTTP request handling
 ├── scripts.js          # DOM manipulation and event handling
+├── toast.js           # Toast notification system (showError, showWarning, showSuccess)
+├── AGENTS.md           # Agent guidelines
 └── README.md           # This file
 ```
 

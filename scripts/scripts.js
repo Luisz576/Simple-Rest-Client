@@ -1,6 +1,39 @@
+const appDb = new AppDB()
 const restClient = new RestClient()
 
+let savedRequests = []
+let currentSelectedRequest = null
+
 document.addEventListener('DOMContentLoaded', () => {
+    function saveSavedRequests() {
+        appDb.saveSavedRequests(savedRequests)
+    }
+
+    function addNewRequest() {
+        const newId = Date.now() * 1000000
+        const name = prompt('Enter request name:')
+        if (name && name.trim()) {
+            savedRequests.push({ id: newId, name: name.trim() })
+            saveSavedRequests()
+            currentSelectedRequest = savedRequests[savedRequests.length - 1]
+            renderDrawerItems()
+            showSuccess('New Request')
+            toggleDrawer()
+        }
+    }
+
+    function initSavedRequests() {
+        const data = appDb.getSavedRequests()
+        if (data && data.length > 0) {
+            savedRequests = data
+        } else {
+            savedRequests = [
+                { id: Date.now() * 1000000, name: 'default' }
+            ]
+        }
+        currentSelectedRequest = savedRequests[0]
+    }
+
     const methodBtns = document.querySelectorAll('.method-btn')
     const methodInput = document.getElementById('method')
     const bodySection = document.getElementById('bodySection')
@@ -8,245 +41,179 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryList = document.getElementById('queryList')
     const headersList = document.getElementById('headersList')
     const submitBtn = document.querySelector('.submit-btn')
+    const drawer = document.getElementById('drawer')
+    const overlay = document.getElementById('overlay')
+    const mainContainer = document.getElementById('mainContainer')
+    const drawerToggle = document.getElementById('drawerToggle')
+    const drawerContent = document.querySelector('.drawer-content')
 
-    // Toast system
-    const toastContainer = document.createElement('div')
-    toastContainer.id = 'toastContainer'
-    toastContainer.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        max-width: 400px;
-        pointer-events: none;
-    `
-    document.body.appendChild(toastContainer)
+    function toggleDrawer() {
+        const isOpen = drawer.classList.toggle('open')
+        overlay.classList.toggle('active')
+        drawer.style.display = isOpen ? 'flex' : 'none'
+        overlay.style.display = isOpen ? 'block' : 'none'
+    }
 
-    function showToast(message, duration = 4000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast'
-        toast.style.cssText = `
-            background: #dc2626;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
+    drawerToggle.addEventListener('click', toggleDrawer)
 
-        // Close button
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
+    overlay.addEventListener('click', toggleDrawer)
+
+    // Render drawer items
+    function renderDrawerItems() {
+        drawerContent.innerHTML = ''
+        
+        if (savedRequests.length === 0) {
+            const emptyMsg = document.createElement('p')
+            emptyMsg.textContent = 'No saved requests'
+            emptyMsg.style.cssText = 'color: var(--text-secondary); text-align: center; padding: 2rem;'
+            drawerContent.appendChild(emptyMsg)
+            return
+        }
+
+        savedRequests.forEach(req => {
+            const item = document.createElement('div')
+            item.className = 'drawer-item'
+            if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
+                item.classList.add('selected')
+            }
+            item.style.cssText = `
+                padding: 0.75rem 1rem;
+                margin-top: 1rem;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: var(--transition);
+            `
+            item.addEventListener('click', () => loadRequest(req.id))
+
+            const nameSpan = document.createElement('span')
+            nameSpan.textContent = req.name
+            nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+
+            const editBtn = document.createElement('button')
+            editBtn.innerHTML = '✏️'
+            editBtn.type = 'button'
+            editBtn.style.cssText = `
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                transition: var(--transition);
+            `
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                editRequestName(req.id)
+            })
+            editBtn.title = 'Edit'
+
+            const deleteBtn = document.createElement('button')
+            deleteBtn.innerHTML = '×'
+            deleteBtn.type = 'button'
+            deleteBtn.style.cssText = `
+                background: var(--error-color);
+                border: none;
+                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+                transition: var(--transition);
+            `
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                deleteRequest(req.id)
+            })
+            deleteBtn.title = 'Delete'
+
+            item.appendChild(nameSpan)
+            item.appendChild(editBtn)
+            item.appendChild(deleteBtn)
+            drawerContent.appendChild(item)
         })
-
-        // Message
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
-
-        // Progress bar container
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            width: 100%;
-            animation-duration: ${duration}ms;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        // Auto remove after duration
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
     }
 
-    function showError(message, duration = 4000) {
-        showToast(message, duration)
+    function loadRequest(id) {
+        const req = savedRequests.find(r => r.id === id)
+        if (!req) return
+
+        // Update current selected request
+        currentSelectedRequest = req
+
+        // Load the request configuration (method, url, headers, body, etc.)
+        // For now, we'll just show a toast with the request info
+        showSuccess(`Loading request: ${req.name}`)
+
+        // TODO: Implement actual request loading logic here
+        // This would populate the form fields with the saved request data
+        renderDrawerItems()
     }
 
-    function showWarning(message, duration = 5000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast toast-warning'
-        toast.style.cssText = `
-            background: #f59e0b;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
+    function editRequestName(id) {
+        const req = savedRequests.find(r => r.id === id)
+        if (!req) return
 
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        })
-
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
-
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            width: 100%;
-            animation-duration: ${duration}ms;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
+        const newName = prompt('Enter new name:', req.name)
+        if (newName && newName.trim()) {
+            // Update the request object
+            const oldId = req.id
+            req.id = Date.now() * 1000000
+            req.name = newName.trim()
+            saveSavedRequests()
+            
+            // Update currentSelectedRequest to point to the same request (if it was selected)
+            if (currentSelectedRequest) {
+                const updatedRequest = savedRequests.find(r => r.id === req.id)
+                if (updatedRequest) {
+                    currentSelectedRequest = updatedRequest
+                } else {
+                    // If we can't find it, keep the old request reference
+                    currentSelectedRequest = req
+                }
+            }
+            
+            renderDrawerItems()
+        }
     }
 
-    function showSuccess(message, duration = 3000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast'
-        toast.style.cssText = `
-            background: #22c55e;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
+    function deleteRequest(id) {
+         const req = savedRequests.find(r => r.id === id)
+        if (!req) {
+            showWarning('Request not found')
+            return
+        }
 
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        })
+        if (savedRequests.length <= 1) {
+            showWarning('Cannot delete the last request')
+            return
+        }
 
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
+        if (req.id === currentSelectedRequest?.id) {
+            showWarning('Cannot delete current request')
+            return
+        }
 
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            width: 100%;
-            animation: progress ${duration}ms linear forwards;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
+        if (confirm(`Delete request "${req.name}"?`)) {
+            savedRequests = savedRequests.filter(r => r.id !== id)
+            renderDrawerItems()
+            saveSavedRequests()
+            showSuccess('Request deleted')
+        }
     }
+
+    document.getElementById('addRequestBtn').addEventListener('click', addNewRequest)
 
     methodBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -618,4 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     })
+
+    initSavedRequests()
+    renderDrawerItems()
 })
