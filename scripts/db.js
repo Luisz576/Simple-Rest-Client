@@ -1,5 +1,6 @@
 const SAVED_REQUESTS_KEY = "rest_client_requests"
 const ENVIRONMENT_VARS_KEY = "rest_client_env_vars"
+const FOLDERS_KEY = "rest_client_folders"
 
 class AppDB {
     saveSavedRequests(data) {
@@ -23,6 +24,32 @@ class AppDB {
         } catch (e) {
             console.error('Error retrieving from localStorage:', e)
             return null
+        }
+    }
+
+    saveFolders(data) {
+        try {
+            localStorage.setItem(FOLDERS_KEY, JSON.stringify(data))
+            return true
+        } catch (e) {
+            console.error('Error saving folders:', e)
+            return false
+        }
+    }
+
+    getFolders() {
+        try {
+            const data = localStorage.getItem(FOLDERS_KEY)
+            if (data) {
+                const parsed = JSON.parse(data)
+                if (Array.isArray(parsed)) {
+                    return parsed
+                }
+            }
+            return []
+        } catch (e) {
+            console.error('Error retrieving folders:', e)
+            return []
         }
     }
 

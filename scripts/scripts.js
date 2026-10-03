@@ -4,6 +4,8 @@ const restClient = new RestClient()
 let savedRequests = []
 let currentSelectedRequest = null
 let envVars = []
+let folders = []
+let collapsedFolders = new Set()
 
 document.addEventListener('DOMContentLoaded', () => {
     function saveSavedRequests() {
@@ -11,15 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addNewRequest() {
-        const newId = Date.now() * 1000000
+        createRequestInFolder(null)
+    }
+
+    function createRequestInFolder(folderId) {
         const name = prompt('Enter request name:')
         if (name && name.trim()) {
+            const newId = Date.now() * 1000000
             const newIndex = getNewIndex()
-            const newRequest = { 
-                id: newId, 
-                name: name.trim(), 
+            const newRequest = {
+                id: newId,
+                name: name.trim(),
                 pos_index: newIndex,
-                config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } 
+                folder_id: folderId,
+                config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } }
             }
             savedRequests.push(newRequest)
             saveSavedRequests()
@@ -112,11 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = appDb.getSavedRequests()
         if (data && data != null && data.length > 0) {
             savedRequests = data
+            savedRequests.forEach(req => {
+                req.folder_id ??= null
+            })
             currentSelectedRequest = savedRequests[0]
             loadRequest(savedRequests[0].id)
         } else {
             savedRequests = [
-                { id: Date.now() * 1000000, name: 'default', pos_index: 0, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+                { id: Date.now() * 1000000, name: 'default', pos_index: 0, folder_id: null, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
             ]
             appDb.saveSavedRequests(savedRequests)
             currentSelectedRequest = savedRequests[0]
