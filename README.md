@@ -25,9 +25,3 @@ A lightweight REST client application built with vanilla web technologies (HTML,
 7. Enter request body content
 8. Enable session cookie if needed and enter token
 9. Click "Send Request" or press `Ctrl+Enter` to execute
-
-## Environment Variables
-
-1. Click "Environment Variables" button in the header
-2. Add key-value pairs for your variables
-3. Use `{{variable_name}}` in URLs, headers, or query parameters to reference them
