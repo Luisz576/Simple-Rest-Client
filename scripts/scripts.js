@@ -73,12 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        const cookie = requestCookieInput?.value || ''
+
         return {
             method,
             url,
             params: queryParams,
             headers,
-            body: { type: bodyType, content: bodyContent }
+            body: { type: bodyType, content: bodyContent },
+            cookie
         }
     }
 
@@ -136,6 +139,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleDrawer() {
         const isOpen = drawer.classList.toggle('open')
         overlay.classList.toggle('active')
+    }
+
+    function getCurrentSessionToken() {
+        const token = localStorage.getItem('session_token')
+        const expires = localStorage.getItem('session_expires')
+
+        if (token && expires) {
+            const now = Date.now()
+            if (now < parseInt(expires)) {
+                return token
+            }
+        }
+
+        return null
+    }
+
+    function clearSessionToken() {
+        localStorage.removeItem('session_token')
+        localStorage.removeItem('session_expires')
+    }
+
+    function saveSessionToken(token) {
+        const expires = Date.now() + (30 * 24 * 60 * 60 * 1000)
+        localStorage.setItem('session_token', token)
+        localStorage.setItem('session_expires', expires.toString())
     }
 
     drawerToggle.addEventListener('click', toggleDrawer)
@@ -348,13 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentSelectedRequest = req
 
         // Load the request configuration
-        const config = req.config || {
-            method: 'GET',
-            url: '',
-            params: {},
-            headers: {},
-            body: { type: 'none', content: null }
-        }
+    const config = req.config || {
+        method: 'GET',
+        url: '',
+        params: {},
+        headers: {},
+        body: { type: 'none', content: null },
+        cookie: ''
+    }
 
           if (methodInput) methodInput.value = config.method || 'GET'
           if (urlInput) urlInput.value = config.url || ''
@@ -402,31 +431,41 @@ document.addEventListener('DOMContentLoaded', () => {
             })
         }
 
-        // Load body
-        if (bodyTypeSelector) {
-            bodyTypeSelector.value = config.body?.type || 'none'
-            const bodyType = bodyTypeSelector.value
-            const bodyNone = document.getElementById('bodyNone')
-            const bodyJson = document.getElementById('bodyJson')
-            const bodyMultipart = document.getElementById('bodyMultipart')
+    // Load cookie
+    if (requestCookieInput) {
+        requestCookieInput.value = config.cookie || ''
 
-            bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
-            bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
-            bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
+        const toggle = document.getElementById('enableCookieToggle')
+        if (toggle) {
+            toggle.checked = (config.cookie || '').length > 0
+        }
+    }
 
-            if (bodyType === 'json' && config.body?.content) {
-                const jsonBody = document.getElementById('jsonBody')
-                if (jsonBody) {
-                    if (typeof config.body.content === 'object') {
-                        jsonBody.value = JSON.stringify(config.body.content, null, 2)
-                    } else {
-                        jsonBody.value = config.body.content
-                    }
+    // Load body
+    if (bodyTypeSelector) {
+        bodyTypeSelector.value = config.body?.type || 'none'
+        const bodyType = bodyTypeSelector.value
+        const bodyNone = document.getElementById('bodyNone')
+        const bodyJson = document.getElementById('bodyJson')
+        const bodyMultipart = document.getElementById('bodyMultipart')
+
+        bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
+        bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
+        bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
+
+        if (bodyType === 'json' && config.body?.content) {
+            const jsonBody = document.getElementById('jsonBody')
+            if (jsonBody) {
+                if (typeof config.body.content === 'object') {
+                    jsonBody.value = JSON.stringify(config.body.content, null, 2)
+                } else {
+                    jsonBody.value = config.body.content
                 }
             }
         }
+    }
 
-        renderDrawerItems()
+    renderDrawerItems()
     }
 
     function editRequestName(id) {
@@ -756,16 +795,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
             `
             
-            if (response.headers) {
-                html += `
-                    <div style="margin-bottom: 1rem;">
-                        <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Headers:</strong>
-                        <code style="background: transparent; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; color: #cbd5e1; word-break: break-word; overflow-wrap: break-word; max-width: 100%;">${Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`).join('<br>')}</code>
-                    </div>
-                `
-            }
-            
-            if (response.data) {
+        if (response.headers) {
+            html += `
+                <div style="margin-bottom: 1rem;">
+                    <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Headers:</strong>
+                    <code style="background: transparent; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; color: #cbd5e1; word-break: break-word; overflow-wrap: break-word; max-width: 100%;">${Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`).join('<br>')}</code>
+                </div>
+            `
+        }
+
+        if (response.setCookie) {
+            html += `
+                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
+                    <strong style="color: #34d399; font-size: 0.9rem; font-weight: 600;">Set-Cookie:</strong>
+                    <code style="background: transparent; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; color: #6ee7b7; word-break: break-all; overflow-wrap: break-word;">${response.setCookie}</code>
+                </div>
+            `
+        }
+
+        if (response.data) {
                 html += `
                     <div>
                         <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Body:</strong>
@@ -827,18 +875,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 requestHeaders['Content-Type'] = contentType
 
-                const response = await restClient.request(method, finalUrl, requestBody, requestHeaders)
+            const cookie = requestCookieInput?.value || ''
 
-                // Check if HTTP status indicates an error
-                if (response.status >= 400) {
+            const response = await restClient.request(method, finalUrl, requestBody, requestHeaders, {
+                cookie
+            })
+
+            if (response.status >= 400) {
                     const errorMessage = `${response.statusText} (${response.status})`
                     showWarning('Request failed', 5000)
-                    displayResponse({
-                        status: response.status,
-                        statusText: response.statusText,
-                        error: errorMessage
-                    })
-                } else {
+                displayResponse({
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorMessage,
+                    setCookie: response.setCookie,
+                    cookie: cookie
+                })
+            } else {
                     showSuccess('Request sent successfully!', 2000)
                     displayResponse(response)
                 }
@@ -912,6 +965,79 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('importBtn').addEventListener('click', importRequests)
+    
+    const requestCookieInput = document.getElementById('cookieTokenInput')
+    const enableCookieToggle = document.getElementById('enableCookieToggle')
+    const loadCookieBtn = document.getElementById('loadCookieBtn')
+    const clearSessionBtn = document.getElementById('clearSessionBtn')
+
+    enableCookieToggle.addEventListener('change', (e) => {
+        const authCookieInput = document.getElementById('authCookieInput')
+        if (e.target.checked) {
+            authCookieInput.style.display = 'flex'
+            if (!requestCookieInput.value) {
+                loadCookieBtn.click()
+            }
+        } else {
+            authCookieInput.style.display = 'none'
+        }
+    })
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Enter - Send request
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault()
+            submitBtn.click()
+        }
+
+        // Ctrl+B - Toggle drawer
+        if (e.ctrlKey && e.key === 'b') {
+            e.preventDefault()
+            toggleDrawer()
+        }
+    })
+
+    loadCookieBtn.addEventListener('click', () => {
+        const token = getCurrentSessionToken()
+        if (token) {
+            requestCookieInput.value = token
+            enableCookieToggle.checked = true
+            document.getElementById('authCookieInput').style.display = 'flex'
+            showSuccess('Session cookie loaded from storage')
+        } else {
+            showWarning('No session token found')
+        }
+    })
+
+    requestCookieInput.addEventListener('blur', () => {
+        if (requestCookieInput.value.trim()) {
+            saveSessionToken(requestCookieInput.value.trim())
+            showSuccess('Session token saved')
+        }
+    })
+
+    clearSessionBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear the session token?')) {
+            clearSessionToken()
+            requestCookieInput.value = ''
+            enableCookieToggle.checked = false
+            document.getElementById('authCookieInput').style.display = 'none'
+            showSuccess('Session cleared')
+        }
+    })
+
+    enableCookieToggle.addEventListener('change', (e) => {
+        const authCookieInput = document.getElementById('authCookieInput')
+        if (e.target.checked) {
+            authCookieInput.style.display = 'flex'
+            if (!requestCookieInput.value) {
+                loadCookieBtn.click()
+            }
+        } else {
+            authCookieInput.style.display = 'none'
+        }
+    })
 
     initSavedRequests()
     renderDrawerItems()
