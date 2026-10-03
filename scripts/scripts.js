@@ -3,6 +3,7 @@ const restClient = new RestClient()
 
 let savedRequests = []
 let currentSelectedRequest = null
+let envVars = []
 
 document.addEventListener('DOMContentLoaded', () => {
     function saveSavedRequests() {
@@ -135,6 +136,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainContainer = document.getElementById('mainContainer')
     const drawerToggle = document.getElementById('drawerToggle')
     const drawerContent = document.querySelector('.drawer-content')
+
+    const urlLabel = document.querySelector('.url-label')
+    const iconWrapper = document.querySelector('.icon-wrapper')
+    const urlTooltip = document.getElementById('urlTooltip')
+
+    // URL tooltip
+    if (iconWrapper && urlTooltip) {
+        urlTooltip.style.display = 'none'
+        iconWrapper.addEventListener('mouseenter', () => urlTooltip.style.display = 'block')
+        iconWrapper.addEventListener('mouseleave', () => urlTooltip.style.display = 'none')
+    }
+
+    // Query Parameters tooltip
+    const queryIconWrapper = document.querySelector('#querySection .icon-wrapper')
+    const queryTooltip = document.getElementById('queryTooltip')
+    if (queryIconWrapper && queryTooltip) {
+        queryTooltip.style.display = 'none'
+        queryIconWrapper.addEventListener('mouseenter', () => queryTooltip.style.display = 'block')
+        queryIconWrapper.addEventListener('mouseleave', () => queryTooltip.style.display = 'none')
+    }
+
+    // Headers tooltip
+    const headersIconWrapper = document.querySelector('#headersSection .icon-wrapper')
+    const headersTooltip = document.getElementById('headersTooltip')
+    if (headersIconWrapper && headersTooltip) {
+        headersTooltip.style.display = 'none'
+        headersIconWrapper.addEventListener('mouseenter', () => headersTooltip.style.display = 'block')
+        headersIconWrapper.addEventListener('mouseleave', () => headersTooltip.style.display = 'none')
+    }
+
+    // Cookie tooltip
+    const cookieIconWrapper = document.querySelector('#authSection .icon-wrapper')
+    const cookieTooltip = document.getElementById('cookieTooltip')
+    if (cookieIconWrapper && cookieTooltip) {
+        cookieTooltip.style.display = 'none'
+        cookieIconWrapper.addEventListener('mouseenter', () => cookieTooltip.style.display = 'block')
+        cookieIconWrapper.addEventListener('mouseleave', () => cookieTooltip.style.display = 'none')
+    }
 
     function toggleDrawer() {
         const isOpen = drawer.classList.toggle('open')
@@ -983,6 +1022,178 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
+    // Environment Variables Dialog
+    const envVariablesBtn = document.getElementById('envVariablesBtn')
+    const envDialogOverlay = document.getElementById('envDialogOverlay')
+    const envDialogClose = document.getElementById('envDialogClose')
+    const addEnvBtn = document.getElementById('addEnvBtn')
+    const clearEnvBtn = document.getElementById('clearEnvBtn')
+    const envList = document.getElementById('envList')
+    let envVars = []
+
+    envVariablesBtn.addEventListener('click', () => {
+        renderEnvVars()
+        envDialogOverlay.style.display = 'flex'
+    })
+
+    envDialogClose.addEventListener('click', () => {
+        envDialogOverlay.style.display = 'none'
+        resetEnvStyles()
+    })
+
+    envDialogOverlay.addEventListener('click', (e) => {
+        if (e.target === envDialogOverlay) {
+            envDialogOverlay.style.display = 'none'
+            resetEnvStyles()
+        }
+    })
+
+    // Add environment variable
+    addEnvBtn.addEventListener('click', () => {
+        const newId = Date.now()
+        envVars.push({ id: newId, key: '', value: '' })
+
+        renderEnvVars()
+        validateEnvVars()
+    })
+
+    // Clear all environment variables
+    clearEnvBtn.addEventListener('click', () => {
+        if (confirm('Clear all environment variables?')) {
+            envVars = []
+            renderEnvVars()
+            validateEnvVars()
+        }
+    })
+
+    // Remove environment variable
+    function removeEnvVar(id) {
+        envVars = envVars.filter(v => v.id !== id)
+        renderEnvVars()
+        validateEnvVars()
+    }
+
+    // Render environment variables list
+    function renderEnvVars() {
+        function envVarSave(){
+            validateEnvVars()
+        }
+
+        envList.innerHTML = ''
+        envVars.forEach(env => {
+            const item = document.createElement('div')
+            item.className = 'env-item'
+            item.dataset.id = env.id
+
+            const keyInput = document.createElement('input')
+            keyInput.type = 'text'
+            keyInput.className = 'env-key-input'
+            keyInput.placeholder = 'Key'
+            keyInput.value = env.key
+            keyInput.id = `env_key_${env.id}`
+            keyInput.dataset.type = 'key'
+            keyInput.addEventListener('blur', envVarSave)
+
+            const valueInput = document.createElement('input')
+            valueInput.type = 'text'
+            valueInput.className = 'env-key-input'
+            valueInput.placeholder = 'Value'
+            valueInput.value = env.value
+            valueInput.id = `env_value_${env.id}`
+            valueInput.dataset.type = 'value'
+            valueInput.addEventListener('blur', envVarSave)
+
+            const removeBtn = document.createElement('button')
+            removeBtn.className = 'env-item-remove'
+            removeBtn.innerHTML = '×'
+            removeBtn.type = 'button'
+            removeBtn.addEventListener('click', () => {
+                removeEnvVar(env.id)
+            })
+
+            item.appendChild(keyInput)
+            item.appendChild(valueInput)
+            item.appendChild(removeBtn)
+            envList.appendChild(item)
+        })
+    }
+
+    // Update environment variable when input changes
+    envList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('env-key-input')) {
+            const id = parseInt(e.target.dataset.id)
+            const env = envVars.find(v => v.id === id)
+            if (env) {
+                if (e.target.dataset.type === 'key') {
+                    env.key = e.target.value
+                } else {
+                    env.value = e.target.value
+                }
+                validateEnvVars()
+            }
+        }
+    })
+
+    // Validate on blur
+    envList.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('env-key-input')) {
+            validateEnvVars()
+        }
+    })
+
+    function processEnvVarsInString(str) {
+        // TODO: return str with {{env}} replaced by env var, if env key not found replace by nothing
+    }
+
+    // Validate environment variables
+    function validateEnvVars() {
+        let isValid = true
+        const keySet = new Set()
+
+        for(let envKey in envVars){
+            const env = envVars[envKey]
+            const keyInput = document.getElementById(`env_key_${env.id}`)
+            const valueInput = document.getElementById(`env_value_${env.id}`)
+            
+            env.key = keyInput.value.trim()
+            env.value = valueInput.value.trim()
+            
+            const key = env.key.trim()
+
+            // Check for empty key
+            if (!key || key == '') {
+                keyInput.style.borderColor = 'var(--error-color)'
+                isValid = false
+            } else {
+                keyInput.style.borderColor = 'var(--border-color)'
+            }
+
+            // Check for duplicate key
+            if (keySet.has(key)) {
+                keyInput.style.borderColor = 'var(--error-color)'
+                isValid = false
+            } else {
+                keySet.add(key)
+            }
+        }
+
+        if (isValid) {
+            saveEnvVars()
+        }
+    }
+
+    // Reset environment variable styles
+    function resetEnvStyles() {
+        document.querySelectorAll('.env-key-input').forEach(input => {
+            input.style.borderColor = 'var(--border-color)'
+        })
+    }
+
+    // Save environment variables to AppDB
+    function saveEnvVars() {
+        appDb.saveEnvVars(envVars)
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         // Ctrl+Enter - Send request
@@ -1039,6 +1250,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })
 
+    // Initialize environment variables from AppDB
+    function initEnvVars() {
+        const loadedEnvVars = appDb.getEnvVars()
+        if (loadedEnvVars && loadedEnvVars.length > 0) {
+            envVars = loadedEnvVars
+            renderEnvVars()
+        }
+    }
+
     initSavedRequests()
     renderDrawerItems()
+    initEnvVars()
 })

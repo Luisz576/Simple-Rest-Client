@@ -50,6 +50,16 @@
             </div>
             <h1>Simple REST Client</h1>
             <div class="header-right">
+                <div class="header-actions">
+                    <button type="button" class="env-variables-btn" id="envVariablesBtn" aria-label="Environment Variables">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Environment Variables
+                    </button>
+                </div>
                 <button type="button" class="save-btn" id="saveBtn" aria-label="Save configuration">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -60,6 +70,38 @@
                 </button>
             </div>
         </header>
+
+        <!-- Environment Variables Dialog -->
+        <div class="dialog-overlay" id="envDialogOverlay" style="display: none;">
+            <div class="dialog" id="envDialog">
+                <div class="dialog-header">
+                    <h2>Environment Variables</h2>
+                    <button type="button" class="dialog-close" id="envDialogClose">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="dialog-content">
+                    <div class="env-buttons">
+                        <button type="button" class="dialog-btn add-env-btn" id="addEnvBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add
+                        </button>
+                        <button type="button" class="dialog-btn clear-env-btn" id="clearEnvBtn">
+                            Clear All
+                        </button>
+                    </div>
+                    <div class="env-list" id="envList">
+                        <!-- Dynamic env vars here -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <main>
             <div class="request-container">
@@ -79,13 +121,39 @@
                     </div>
 
                     <div class="url-input-group">
-                        <label for="url">URL:</label>
+                        <label for="url" class="url-label">
+                            <span class="url-label-text">URL</span>
+                            <div class="icon-wrapper">
+                                <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <div class="info-tooltip" id="urlTooltip">
+                                    <span class="tooltip-content">Use {{env_var}} to use a environment variable</span>
+                                    <span class="tooltip-pointer"></span>
+                                </div>
+                            </div>
+                        </label>
                         <input type="text" id="url" placeholder="https://api.example.com/endpoint" class="url-input">
                     </div>
 
                     <div class="section query-section" id="querySection">
                         <div class="section-header">
-                            <h3>Query Parameters</h3>
+                            <h3>
+                                Query Parameters
+                                <div class="icon-wrapper">
+                                    <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div class="info-tooltip" id="queryTooltip">
+                                        <span class="tooltip-content">Use {{env_var}} to use a environment variable</span>
+                                        <span class="tooltip-pointer"></span>
+                                    </div>
+                                </div>
+                            </h3>
                             <button type="button" class="add-btn" data-target="queryList">+ Add</button>
                         </div>
                         <div class="params-list" id="queryList">
@@ -95,7 +163,20 @@
 
                     <div class="section headers-section" id="headersSection">
                         <div class="section-header">
-                            <h3>Headers</h3>
+                            <h3>
+                                Headers
+                                <div class="icon-wrapper">
+                                    <svg class="info-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                    </svg>
+                                    <div class="info-tooltip" id="headersTooltip">
+                                        <span class="tooltip-content">Use {{env_var}} to use a environment variable</span>
+                                        <span class="tooltip-pointer"></span>
+                                    </div>
+                                </div>
+                            </h3>
                             <button type="button" class="add-btn" data-target="headersList">+ Add</button>
                         </div>
                         <div class="params-list" id="headersList">
@@ -145,7 +226,20 @@
                             <div>
                                 <label class="auth-toggle">
                                     <input type="checkbox" id="enableCookieToggle">
-                                    <span>Use Session Cookie</span>
+                                    <span>
+                                        Use Session Cookie
+                                        <div class="icon-wrapper">
+                                            <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                            </svg>
+                                            <div class="info-tooltip" id="cookieTooltip">
+                                                <span class="tooltip-content">Use {{env_var}} to use a environment variable</span>
+                                                <span class="tooltip-pointer"></span>
+                                            </div>
+                                        </div>
+                                    </span>
                                 </label>
                             </div>
                             <div class="auth-actions">

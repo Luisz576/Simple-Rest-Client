@@ -1,4 +1,5 @@
 const SAVED_REQUESTS_KEY = "rest_client_requests"
+const ENVIRONMENT_VARS_KEY = "rest_client_env_vars"
 
 class AppDB {
     saveSavedRequests(data) {
@@ -25,16 +26,45 @@ class AppDB {
         }
     }
 
-    _sort(dataPos){
+    saveEnvVars(data) {
+        try {
+            localStorage.setItem(ENVIRONMENT_VARS_KEY, JSON.stringify(data))
+            return true
+        } catch (e) {
+            console.error('Error saving environment variables:', e)
+            return false
+        }
+    }
+
+    getEnvVars() {
+        try {
+            const data = localStorage.getItem(ENVIRONMENT_VARS_KEY)
+            if (data) {
+                let i
+                const parsed = JSON.parse(data)
+                // Ensure all env vars have id
+                return parsed.map(env => ({
+                    ...env,
+                    id: env.id || (Date.now() + i++)
+                }))
+            }
+            return []
+        } catch (e) {
+            console.error('Error retrieving environment variables:', e)
+            return []
+        }
+    }
+
+    _sort(dataPos) {
         let sortedData = [...dataPos]
-        
+
         const withIndex = sortedData.filter(req => req.pos_index !== undefined && req.pos_index !== null)
         const withoutIndex = sortedData.filter(req => req.pos_index === undefined || req.pos_index === null)
-        
+
         withIndex.sort((a, b) => (a.pos_index || 0) - (b.pos_index || 0))
-        
+
         sortedData = [...withIndex, ...withoutIndex]
-        
+
         sortedData.forEach((req, idx) => {
             req.pos_index = idx
         })
