@@ -157,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         savedRequests.forEach(req => {
             const item = document.createElement('div')
             item.className = 'drawer-item'
+            item.dataset.reqId = req.id
             if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
                 item.classList.add('selected')
             }
@@ -222,11 +223,95 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             deleteBtn.title = 'Delete'
 
+            const dragSpan = document.createElement('span')
+            dragSpan.innerHTML = "¦¦"
+            dragSpan.className = 'reorder-handle'
+            dragSpan.draggable = true
+            dragSpan.style.cssText = `
+                cursor: grab;
+                user-select: none;
+                color: var(--text-secondary);
+                font-size: 14px;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.2s;
+            `
+            dragSpan.addEventListener('dragstart', handleDragStart)
+            dragSpan.addEventListener('dragend', handleDragEnd)
+
+            item.appendChild(dragSpan)
             item.appendChild(nameSpan)
             item.appendChild(editBtn)
             item.appendChild(deleteBtn)
             drawerContent.appendChild(item)
         })
+    }
+
+    let draggedItem = null
+
+    function handleDragStart(e) {
+        draggedItem = this.parentElement
+        this.style.opacity = '0.5'
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', draggedItem.id)
+    }
+
+    function handleDragEnd() {
+        this.style.opacity = '1'
+        draggedItem = null
+        
+        document.querySelectorAll('.drawer-item').forEach(item => {
+            item.style.backgroundColor = ''
+        })
+    }
+
+    drawerContent.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        
+        const afterElement = getDragAfterElement(drawerContent, e.clientY)
+        if (afterElement == null) {
+            drawerContent.appendChild(draggedItem)
+        } else {
+            drawerContent.insertBefore(draggedItem, afterElement)
+        }
+        
+        updateItemOrder()
+    })
+
+    drawerContent.addEventListener('drop', (e) => {
+        e.preventDefault()
+    })
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.drawer-item')].slice(0, 5)
+        
+        return draggableElements.reduce((closest, child) => {
+            if (child === draggedItem) return closest
+            const box = child.getBoundingClientRect()
+            const offset = y - box.top - box.height / 2
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child }
+            } else {
+                return closest
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element
+    }
+
+    function updateItemOrder() {
+        const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
+        
+        drawerItems.forEach((item, index) => {
+            const reqId = item.dataset.reqId
+            if (reqId) {
+                const req = savedRequests.find(r => r.id === parseInt(reqId))
+                if (req) {
+                    req.pos_index = index
+                }
+            }
+        })
+        
+        appDb.saveSavedRequests(savedRequests)
     }
 
     function loadRequest(id) {

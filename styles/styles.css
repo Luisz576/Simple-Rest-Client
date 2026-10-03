@@ -91,6 +91,36 @@
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
 }
 
+.drawer-item.dragging {
+    opacity: 0.5;
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    cursor: grabbing;
+}
+
+.reorder-handle {
+    cursor: grab;
+    user-select: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.reorder-handle:hover {
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.reorder-handle:active {
+    cursor: grabbing;
+}
+
+.reorder-handle.dragging {
+    opacity: 0.3;
+}
+
 .drawer-item .item-name {
     flex: 1;
     color: var(--text-primary);
