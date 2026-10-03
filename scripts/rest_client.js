@@ -1,35 +1,45 @@
 class RestClient {
-    urlBase
+    constructor() {
+        this.urlBase = ''
+    }
 
-    async request(method, url, body = undefined, headers = {}) {
+    async request(method, url, body = undefined, headers = {}, options = {}) {
         const config = {
             method: method,
-            headers,
+            headers: { ...headers },
             body
+        }
+
+        if (options.cookie) {
+            config.headers['Cookie'] = options.cookie
         }
 
         console.log('[RESTClient] Request:', {
             url,
             method,
-            body: body,
-            headers
+            body,
+            headers,
+            cookie: options.cookie
         })
 
         try {
             const response = await fetch(url, config)
-            
+
             console.log('[RESTClient] Response:', {
                 status: response.status,
                 statusText: response.statusText
             })
 
             const data = await response.json()
-            
+            const setCookie = response.headers.get('set-cookie')
+
             return {
                 status: response.status,
                 statusText: response.statusText,
                 headers: response.headers,
-                data
+                data,
+                setCookie,
+                cookie: options.cookie
             }
         } catch (error) {
             console.warn('[RESTClient] Error:', error)

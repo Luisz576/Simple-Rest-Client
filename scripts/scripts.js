@@ -3,6 +3,7 @@ const restClient = new RestClient()
 
 let savedRequests = []
 let currentSelectedRequest = null
+let envVars = []
 
 document.addEventListener('DOMContentLoaded', () => {
     function saveSavedRequests() {
@@ -73,12 +74,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        const cookie = document.getElementById('cookieTokenInput')?.value || ''
+
         return {
             method,
             url,
             params: queryParams,
             headers,
-            body: { type: bodyType, content: bodyContent }
+            body: { type: bodyType, content: bodyContent },
+            cookie
         }
     }
 
@@ -133,9 +137,72 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawerToggle = document.getElementById('drawerToggle')
     const drawerContent = document.querySelector('.drawer-content')
 
+    const urlLabel = document.querySelector('.url-label')
+    const iconWrapper = document.querySelector('.icon-wrapper')
+    const urlTooltip = document.getElementById('urlTooltip')
+
+    // URL tooltip
+    if (iconWrapper && urlTooltip) {
+        urlTooltip.style.display = 'none'
+        iconWrapper.addEventListener('mouseenter', () => urlTooltip.style.display = 'block')
+        iconWrapper.addEventListener('mouseleave', () => urlTooltip.style.display = 'none')
+    }
+
+    // Query Parameters tooltip
+    const queryIconWrapper = document.querySelector('#querySection .icon-wrapper')
+    const queryTooltip = document.getElementById('queryTooltip')
+    if (queryIconWrapper && queryTooltip) {
+        queryTooltip.style.display = 'none'
+        queryIconWrapper.addEventListener('mouseenter', () => queryTooltip.style.display = 'block')
+        queryIconWrapper.addEventListener('mouseleave', () => queryTooltip.style.display = 'none')
+    }
+
+    // Headers tooltip
+    const headersIconWrapper = document.querySelector('#headersSection .icon-wrapper')
+    const headersTooltip = document.getElementById('headersTooltip')
+    if (headersIconWrapper && headersTooltip) {
+        headersTooltip.style.display = 'none'
+        headersIconWrapper.addEventListener('mouseenter', () => headersTooltip.style.display = 'block')
+        headersIconWrapper.addEventListener('mouseleave', () => headersTooltip.style.display = 'none')
+    }
+
+    // Cookie tooltip
+    const cookieIconWrapper = document.querySelector('#authSection .icon-wrapper')
+    const cookieTooltip = document.getElementById('cookieTooltip')
+    if (cookieIconWrapper && cookieTooltip) {
+        cookieTooltip.style.display = 'none'
+        cookieIconWrapper.addEventListener('mouseenter', () => cookieTooltip.style.display = 'block')
+        cookieIconWrapper.addEventListener('mouseleave', () => cookieTooltip.style.display = 'none')
+    }
+
     function toggleDrawer() {
         const isOpen = drawer.classList.toggle('open')
         overlay.classList.toggle('active')
+    }
+
+    function getCurrentSessionToken() {
+        const token = localStorage.getItem('session_token')
+        const expires = localStorage.getItem('session_expires')
+
+        if (token && expires) {
+            const now = Date.now()
+            if (now < parseInt(expires)) {
+                return token
+            }
+        }
+
+        return null
+    }
+
+    function clearSessionToken() {
+        localStorage.removeItem('session_token')
+        localStorage.removeItem('session_expires')
+    }
+
+    function saveSessionToken(token) {
+        const expires = Date.now() + (30 * 24 * 60 * 60 * 1000)
+        localStorage.setItem('session_token', token)
+        localStorage.setItem('session_expires', expires.toString())
     }
 
     drawerToggle.addEventListener('click', toggleDrawer)
@@ -353,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: '',
             params: {},
             headers: {},
-            body: { type: 'none', content: null }
+            body: { type: 'none', content: null },
+            cookie: ''
         }
 
           if (methodInput) methodInput.value = config.method || 'GET'
@@ -400,6 +468,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.style.marginTop = idx > 0 ? '0.5rem' : ''
                 headersList.appendChild(item)
             })
+        }
+
+        // Load cookie
+        const cookieTokenInput = document.getElementById('cookieTokenInput')
+        if (cookieTokenInput) {
+            cookieTokenInput.value = config.cookie || ''
+
+            const toggle = document.getElementById('enableCookieToggle')
+            if (toggle) {
+                toggle.checked = (config.cookie || '').length > 0
+            }
         }
 
         // Load body
@@ -639,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const method = methodInput.value
         const url = urlInput.value.trim()
+        const processedUrl = processEnvVarsInString(url)
 
         // Validate method
         if (!method) {
@@ -649,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Validate URL
         try {
-            new URL(url)
+            new URL(processedUrl)
         } catch (e) {
             showError('Invalid URL. Use format: https://api.example.com/endpoint')
             urlInput.focus()
@@ -662,12 +742,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const item of queryItems) {
                 const keyInput = item.querySelector('.key-input')
                 const valueInput = item.querySelector('.value-input')
-                if (!keyInput.value.trim()) {
+                const processedKey = processEnvVarsInString(keyInput.value)
+                const processedValue = processEnvVarsInString(valueInput.value)
+                if (!processedKey.trim()) {
                     showError('Please fill all Query Parameter keys')
                     keyInput.focus()
                     return false
                 }
-                if (!valueInput.value.trim()) {
+                if (!processedValue.trim()) {
                     showError('Please fill all Query Parameter values')
                     valueInput.focus()
                     return false
@@ -681,12 +763,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const item of headerItems) {
                 const keyInput = item.querySelector('.key-input')
                 const valueInput = item.querySelector('.value-input')
-                if (!keyInput.value.trim()) {
+                const processedKey = processEnvVarsInString(keyInput.value)
+                const processedValue = processEnvVarsInString(valueInput.value)
+                if (!processedKey.trim()) {
                     showError('Please fill all Header keys')
                     keyInput.focus()
                     return false
                 }
-                if (!valueInput.value.trim()) {
+                if (!processedValue.trim()) {
                     showError('Please fill all Header values')
                     valueInput.focus()
                     return false
@@ -756,16 +840,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
             `
             
-            if (response.headers) {
-                html += `
-                    <div style="margin-bottom: 1rem;">
-                        <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Headers:</strong>
-                        <code style="background: transparent; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; color: #cbd5e1; word-break: break-word; overflow-wrap: break-word; max-width: 100%;">${Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`).join('<br>')}</code>
-                    </div>
-                `
-            }
-            
-            if (response.data) {
+        if (response.headers) {
+            html += `
+                <div style="margin-bottom: 1rem;">
+                    <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Headers:</strong>
+                    <code style="background: transparent; padding: 0.75rem; border-radius: 8px; font-size: 0.875rem; color: #cbd5e1; word-break: break-word; overflow-wrap: break-word; max-width: 100%;">${Object.entries(response.headers).map(([k, v]) => `${k}: ${v}`).join('<br>')}</code>
+                </div>
+            `
+        }
+
+        if (response.setCookie) {
+            html += `
+                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
+                    <strong style="color: #34d399; font-size: 0.9rem; font-weight: 600;">Set-Cookie:</strong>
+                    <code style="background: transparent; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; color: #6ee7b7; word-break: break-all; overflow-wrap: break-word;">${response.setCookie}</code>
+                </div>
+            `
+        }
+
+        if (response.data) {
                 html += `
                     <div>
                         <strong style="color: #e2e8f0; font-size: 1rem; font-weight: 500;">Body:</strong>
@@ -784,13 +877,14 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault()
             const method = methodInput.value
             const url = urlInput.value.trim()
+            const processedUrl = processEnvVarsInString(url)
 
             // Build query params
             const queryParams = {}
             document.querySelectorAll('#queryList .param-item').forEach(item => {
                 const key = item.querySelector('.key-input').value
                 const value = item.querySelector('.value-input').value
-                queryParams[key] = value
+                queryParams[processEnvVarsInString(key)] = processEnvVarsInString(value)
             })
 
             // Build headers
@@ -798,12 +892,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('#headersList .param-item').forEach(item => {
                 const key = item.querySelector('.key-input').value
                 const value = item.querySelector('.value-input').value
-                requestHeaders[key] = value
+                requestHeaders[processEnvVarsInString(key)] = processEnvVarsInString(value)
             })
 
             // Prepare final URL with query params
-            const finalUrl = queryParams && Object.keys(queryParams).length > 0 ? 
-                `${url}?${new URLSearchParams(queryParams).toString()}` : url
+            const finalUrl = Object.keys(queryParams).length > 0 ? 
+                `${processedUrl}?${new URLSearchParams(queryParams).toString()}` : processedUrl
 
             try {
                 let requestBody = undefined
@@ -827,16 +921,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 requestHeaders['Content-Type'] = contentType
 
-                const response = await restClient.request(method, finalUrl, requestBody, requestHeaders)
+                const cookie = processEnvVarsInString(document.getElementById('cookieTokenInput')?.value || '')
 
-                // Check if HTTP status indicates an error
+                const response = await restClient.request(method, finalUrl, requestBody, requestHeaders, {
+                    cookie
+                })
+
                 if (response.status >= 400) {
                     const errorMessage = `${response.statusText} (${response.status})`
                     showWarning('Request failed', 5000)
                     displayResponse({
                         status: response.status,
                         statusText: response.statusText,
-                        error: errorMessage
+                        error: errorMessage,
+                        setCookie: response.setCookie,
+                        cookie: cookie
                     })
                 } else {
                     showSuccess('Request sent successfully!', 2000)
@@ -912,7 +1011,275 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('importBtn').addEventListener('click', importRequests)
+    
+    const enableCookieToggle = document.getElementById('enableCookieToggle')
+    const loadCookieBtn = document.getElementById('loadCookieBtn')
+    const clearSessionBtn = document.getElementById('clearSessionBtn')
+
+    enableCookieToggle.addEventListener('change', (e) => {
+        const cookieInput = document.getElementById('cookieTokenInput')
+        if (e.target.checked) {
+            cookieInput.style.display = 'flex'
+            if (!cookieInput.value) {
+                loadCookieBtn.click()
+            }
+        } else {
+            cookieInput.style.display = 'none'
+        }
+    })
+
+    // Environment Variables Dialog
+    const envVariablesBtn = document.getElementById('envVariablesBtn')
+    const envDialogOverlay = document.getElementById('envDialogOverlay')
+    const envDialogClose = document.getElementById('envDialogClose')
+    const addEnvBtn = document.getElementById('addEnvBtn')
+    const clearEnvBtn = document.getElementById('clearEnvBtn')
+    const envList = document.getElementById('envList')
+    let envVars = []
+
+    envVariablesBtn.addEventListener('click', () => {
+        renderEnvVars()
+        envDialogOverlay.style.display = 'flex'
+    })
+
+    envDialogClose.addEventListener('click', () => {
+        envDialogOverlay.style.display = 'none'
+        resetEnvStyles()
+    })
+
+    envDialogOverlay.addEventListener('click', (e) => {
+        if (e.target === envDialogOverlay) {
+            envDialogOverlay.style.display = 'none'
+            resetEnvStyles()
+        }
+    })
+
+    // Add environment variable
+    addEnvBtn.addEventListener('click', () => {
+        const newId = Date.now()
+        envVars.push({ id: newId, key: '', value: '' })
+
+        renderEnvVars()
+        validateEnvVars()
+    })
+
+    // Clear all environment variables
+    clearEnvBtn.addEventListener('click', () => {
+        if (confirm('Clear all environment variables?')) {
+            envVars = []
+            renderEnvVars()
+            validateEnvVars()
+        }
+    })
+
+    // Remove environment variable
+    function removeEnvVar(id) {
+        envVars = envVars.filter(v => v.id !== id)
+        renderEnvVars()
+        validateEnvVars()
+    }
+
+    // Render environment variables list
+    function renderEnvVars() {
+        function envVarSave(){
+            validateEnvVars()
+        }
+
+        envList.innerHTML = ''
+        envVars.forEach(env => {
+            const item = document.createElement('div')
+            item.className = 'env-item'
+            item.dataset.id = env.id
+
+            const keyInput = document.createElement('input')
+            keyInput.type = 'text'
+            keyInput.className = 'env-key-input'
+            keyInput.placeholder = 'Key'
+            keyInput.value = env.key
+            keyInput.id = `env_key_${env.id}`
+            keyInput.dataset.type = 'key'
+            keyInput.addEventListener('blur', envVarSave)
+
+            const valueInput = document.createElement('input')
+            valueInput.type = 'text'
+            valueInput.className = 'env-key-input'
+            valueInput.placeholder = 'Value'
+            valueInput.value = env.value
+            valueInput.id = `env_value_${env.id}`
+            valueInput.dataset.type = 'value'
+            valueInput.addEventListener('blur', envVarSave)
+
+            const removeBtn = document.createElement('button')
+            removeBtn.className = 'env-item-remove'
+            removeBtn.innerHTML = '×'
+            removeBtn.type = 'button'
+            removeBtn.addEventListener('click', () => {
+                removeEnvVar(env.id)
+            })
+
+            item.appendChild(keyInput)
+            item.appendChild(valueInput)
+            item.appendChild(removeBtn)
+            envList.appendChild(item)
+        })
+    }
+
+    // Update environment variable when input changes
+    envList.addEventListener('input', (e) => {
+        if (e.target.classList.contains('env-key-input')) {
+            const id = parseInt(e.target.dataset.id)
+            const env = envVars.find(v => v.id === id)
+            if (env) {
+                if (e.target.dataset.type === 'key') {
+                    env.key = e.target.value
+                } else {
+                    env.value = e.target.value
+                }
+                validateEnvVars()
+            }
+        }
+    })
+
+    // Validate on blur
+    envList.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('env-key-input')) {
+            validateEnvVars()
+        }
+    })
+
+    function processEnvVarsInString(str) {
+        if (!str || typeof str !== 'string') return str;
+        
+        const validEnvVars = []
+        const usedKeys = new Set()
+        
+        for(let k in envVars){
+            const env = envVars[k]
+            const key = env.key.trim()
+            
+            // Skip if key is empty
+            if (!key) continue
+            
+            // Skip if key is duplicate
+            if (usedKeys.has(key)) continue
+            
+            usedKeys.add(key)
+            validEnvVars.push(env)
+        }
+        
+        let result = str;
+        
+        validEnvVars.forEach(env => {
+            const pattern = new RegExp(`\\{\\{${env.key}\\}\\}`, 'g');
+            result = result.replace(pattern, env.value);
+        });
+        
+        return result;
+    }
+
+    // Validate environment variables
+    function validateEnvVars() {
+        let isValid = true
+        const keySet = new Set()
+
+        for(let envKey in envVars){
+            const env = envVars[envKey]
+            const keyInput = document.getElementById(`env_key_${env.id}`)
+            const valueInput = document.getElementById(`env_value_${env.id}`)
+            
+            env.key = keyInput.value.trim()
+            env.value = valueInput.value.trim()
+            
+            const key = env.key.trim()
+
+            // Check for empty key
+            if (!key || key == '') {
+                keyInput.style.borderColor = 'var(--error-color)'
+                isValid = false
+            } else {
+                keyInput.style.borderColor = 'var(--border-color)'
+            }
+
+            // Check for duplicate key
+            if (keySet.has(key)) {
+                keyInput.style.borderColor = 'var(--error-color)'
+                isValid = false
+            } else {
+                keySet.add(key)
+            }
+        }
+
+        if (isValid) {
+            saveEnvVars()
+        }
+    }
+
+    // Reset environment variable styles
+    function resetEnvStyles() {
+        document.querySelectorAll('.env-key-input').forEach(input => {
+            input.style.borderColor = 'var(--border-color)'
+        })
+    }
+
+    // Save environment variables to AppDB
+    function saveEnvVars() {
+        appDb.saveEnvVars(envVars)
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+Enter - Send request
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault()
+            submitBtn.click()
+        }
+
+        // Ctrl+B - Toggle drawer
+        if (e.ctrlKey && e.key === 'b') {
+            e.preventDefault()
+            toggleDrawer()
+        }
+    })
+
+    loadCookieBtn.addEventListener('click', () => {
+        const token = getCurrentSessionToken()
+        if (token) {
+            document.getElementById('cookieTokenInput').value = token
+            enableCookieToggle.checked = true
+            document.getElementById('cookieTokenInput').style.display = 'flex'
+            showSuccess('Session cookie loaded from storage')
+        } else {
+            showWarning('No session token found')
+        }
+    })
+
+    const cookieTokenInput = document.getElementById('cookieTokenInput')
+    cookieTokenInput.addEventListener('blur', () => {
+        if (cookieTokenInput.value.trim()) {
+            saveSessionToken(cookieTokenInput.value.trim())
+            showSuccess('Session token saved')
+        }
+    })
+
+    clearSessionBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear the session token?')) {
+            clearSessionToken()
+            document.getElementById('cookieTokenInput').value = ''
+            enableCookieToggle.checked = false
+            showSuccess('Session cleared')
+        }
+    })
+
+    // Initialize environment variables from AppDB
+    function initEnvVars() {
+        const loadedEnvVars = appDb.getEnvVars()
+        if (loadedEnvVars && loadedEnvVars.length > 0) {
+            envVars = loadedEnvVars
+            renderEnvVars()
+        }
+    }
 
     initSavedRequests()
     renderDrawerItems()
+    initEnvVars()
 })
