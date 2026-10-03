@@ -50,8 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleDrawer() {
         const isOpen = drawer.classList.toggle('open')
         overlay.classList.toggle('active')
-        drawer.style.display = isOpen ? 'flex' : 'none'
-        overlay.style.display = isOpen ? 'block' : 'none'
     }
 
     drawerToggle.addEventListener('click', toggleDrawer)
