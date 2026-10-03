@@ -13,25 +13,99 @@ document.addEventListener('DOMContentLoaded', () => {
         const newId = Date.now() * 1000000
         const name = prompt('Enter request name:')
         if (name && name.trim()) {
-            savedRequests.push({ id: newId, name: name.trim() })
+            const newRequest = { id: newId, name: name.trim(), config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+            savedRequests.push(newRequest)
             saveSavedRequests()
-            currentSelectedRequest = savedRequests[savedRequests.length - 1]
+            currentSelectedRequest = newRequest
+            loadRequest(newId)
             renderDrawerItems()
             showSuccess('New Request')
             toggleDrawer()
         }
     }
 
+    function getCurrentRequestConfig() {
+        const method = methodInput.value
+        const url = urlInput.value.trim()
+        
+        // Build query params
+        const queryParams = {}
+        document.querySelectorAll('#queryList .param-item').forEach(item => {
+            const key = item.querySelector('.key-input').value
+            const value = item.querySelector('.value-input').value
+            if (key && value) {
+                queryParams[key] = value
+            }
+        })
+        
+        // Build headers
+        const headers = {}
+        document.querySelectorAll('#headersList .param-item').forEach(item => {
+            const key = item.querySelector('.key-input').value
+            const value = item.querySelector('.value-input').value
+            if (key && value) {
+                headers[key] = value
+            }
+        })
+        
+        // Build body
+        const bodyType = bodyTypeSelector.value
+        let bodyContent = null
+        if (bodyType === 'json') {
+            const jsonValue = document.getElementById('jsonBody').value.trim()
+            if (jsonValue) {
+                try {
+                    bodyContent = JSON.parse(jsonValue)
+                } catch (e) {
+                    bodyContent = jsonValue
+                }
+            }
+        }
+        
+        return {
+            method,
+            url,
+            params: queryParams,
+            headers,
+            body: { type: bodyType, content: bodyContent }
+        }
+    }
+
+    function saveRequest() {
+        if (!currentSelectedRequest) {
+            showWarning('No request selected')
+            return
+        }
+        
+        const config = getCurrentRequestConfig()
+        const oldId = currentSelectedRequest.id
+        
+        // Update or create the request
+        const index = savedRequests.findIndex(r => r.id === oldId)
+        if (index !== -1) {
+            savedRequests[index].config = config
+        } else {
+            savedRequests.push({ ...currentSelectedRequest, config })
+        }
+        
+        saveSavedRequests()
+        renderDrawerItems()
+        showSuccess('Request saved successfully!')
+    }
+
     function initSavedRequests() {
         const data = appDb.getSavedRequests()
         if (data && data.length > 0) {
             savedRequests = data
+            currentSelectedRequest = savedRequests[0]
+            loadRequest(savedRequests[0].id)
         } else {
             savedRequests = [
-                { id: Date.now() * 1000000, name: 'default' }
+                { id: Date.now() * 1000000, name: 'default', config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
             ]
+            currentSelectedRequest = savedRequests[0]
+            loadRequest(savedRequests[0].id)
         }
-        currentSelectedRequest = savedRequests[0]
     }
 
     const methodBtns = document.querySelectorAll('.method-btn')
@@ -150,12 +224,85 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update current selected request
         currentSelectedRequest = req
 
-        // Load the request configuration (method, url, headers, body, etc.)
-        // For now, we'll just show a toast with the request info
-        showSuccess(`Loading request: ${req.name}`)
+        // Load the request configuration
+        const config = req.config || {
+            method: 'GET',
+            url: '',
+            params: {},
+            headers: {},
+            body: { type: 'none', content: null }
+        }
 
-        // TODO: Implement actual request loading logic here
-        // This would populate the form fields with the saved request data
+          if (methodInput) methodInput.value = config.method || 'GET'
+          if (urlInput) urlInput.value = config.url || ''
+          
+          // Update method buttons
+          if (methodBtns && config.method) {
+              methodBtns.forEach(btn => {
+                  btn.classList.remove('active')
+                  if (btn.dataset.method === config.method) {
+                      btn.classList.add('active')
+                  }
+              })
+          }
+          
+          // Show/hide body section based on method
+          if (bodySection && config.method) {
+              if (['GET', 'HEAD', 'OPTIONS'].includes(config.method)) {
+                  bodySection.style.display = 'none'
+              } else {
+                  bodySection.style.display = 'block'
+              }
+          }
+
+        // Load query params
+        if (queryList) {
+            queryList.innerHTML = ''
+            Object.entries(config.params || {}).forEach(([key, value], idx) => {
+                const item = createParamItem('query')
+                item.querySelector('.key-input').value = key
+                item.querySelector('.value-input').value = value
+                item.style.marginTop = idx > 0 ? '0.5rem' : ''
+                queryList.appendChild(item)
+            })
+        }
+
+        // Load headers
+        if (headersList) {
+            headersList.innerHTML = ''
+            Object.entries(config.headers || {}).forEach(([key, value], idx) => {
+                const item = createParamItem('header')
+                item.querySelector('.key-input').value = key
+                item.querySelector('.value-input').value = value
+                item.style.marginTop = idx > 0 ? '0.5rem' : ''
+                headersList.appendChild(item)
+            })
+        }
+
+        // Load body
+        if (bodyTypeSelector) {
+            bodyTypeSelector.value = config.body?.type || 'none'
+            const bodyType = bodyTypeSelector.value
+            const bodyNone = document.getElementById('bodyNone')
+            const bodyJson = document.getElementById('bodyJson')
+            const bodyMultipart = document.getElementById('bodyMultipart')
+
+            bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
+            bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
+            bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
+
+            if (bodyType === 'json' && config.body?.content) {
+                const jsonBody = document.getElementById('jsonBody')
+                if (jsonBody) {
+                    if (typeof config.body.content === 'object') {
+                        jsonBody.value = JSON.stringify(config.body.content, null, 2)
+                    } else {
+                        jsonBody.value = config.body.content
+                    }
+                }
+            }
+        }
+
         renderDrawerItems()
     }
 
@@ -165,10 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newName = prompt('Enter new name:', req.name)
         if (newName && newName.trim()) {
-            // Update the request object
             const oldId = req.id
             req.id = Date.now() * 1000000
             req.name = newName.trim()
+            req.config = getCurrentRequestConfig()
             saveSavedRequests()
             
             // Update currentSelectedRequest to point to the same request (if it was selected)
@@ -187,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function deleteRequest(id) {
-         const req = savedRequests.find(r => r.id === id)
+        const req = savedRequests.find(r => r.id === id)
         if (!req) {
             showWarning('Request not found')
             return
@@ -205,8 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (confirm(`Delete request "${req.name}"?`)) {
             savedRequests = savedRequests.filter(r => r.id !== id)
-            renderDrawerItems()
             saveSavedRequests()
+            renderDrawerItems()
             showSuccess('Request deleted')
         }
     }
@@ -583,6 +730,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     })
+
+    document.getElementById('saveBtn').addEventListener('click', saveRequest)
 
     initSavedRequests()
     renderDrawerItems()
