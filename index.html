@@ -7,10 +7,42 @@
     <link rel="stylesheet" href="./styles/styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
+        <!-- Drawer Sidebar -->
+        <aside class="drawer sidebar" id="drawer">
+            <div class="drawer-header">
+                <div class="drawer-header-top">
+                    <h3 class="drawer-title">Saved Requests</h3>
+                    <button type="button" class="add-request-btn" id="addRequestBtn">New</button>
+                </div>
+            </div>
+            <div class="drawer-content">
+            </div>
+        </aside>
+
+        <div class="overlay" id="overlay"></div>
+
         <header>
+            <div class="header-left">
+                <button type="button" class="drawer-toggle" id="drawerToggle" aria-label="Toggle drawer">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
             <h1>Simple REST Client</h1>
-            <p class="subtitle">Make HTTP requests easily and efficiently</p>
+            <div class="header-right">
+                <button type="button" class="save-btn" id="saveBtn" aria-label="Save configuration">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save
+                </button>
+            </div>
         </header>
 
         <main>
@@ -124,6 +156,8 @@
         </footer>
     </div>
 
+    <script src="./scripts/toast.js"></script>
+    <script src="./scripts/db.js"></script>
     <script src="./scripts/rest_client.js"></script>
     <script src="./scripts/scripts.js"></script>
 </body>

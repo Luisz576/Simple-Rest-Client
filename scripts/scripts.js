@@ -1,6 +1,125 @@
+const appDb = new AppDB()
 const restClient = new RestClient()
 
+let savedRequests = []
+let currentSelectedRequest = null
+
 document.addEventListener('DOMContentLoaded', () => {
+    function saveSavedRequests() {
+        appDb.saveSavedRequests(savedRequests)
+    }
+
+    function addNewRequest() {
+        const newId = Date.now() * 1000000
+        const name = prompt('Enter request name:')
+        if (name && name.trim()) {
+            const newIndex = getNewIndex()
+            const newRequest = { 
+                id: newId, 
+                name: name.trim(), 
+                pos_index: newIndex,
+                config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } 
+            }
+            savedRequests.push(newRequest)
+            saveSavedRequests()
+            currentSelectedRequest = newRequest
+            loadRequest(newId)
+            renderDrawerItems()
+            showSuccess('New Request')
+            toggleDrawer()
+        }
+    }
+
+    function getNewIndex() {
+        const maxIndex = Math.max(...savedRequests.map(req => req.pos_index ?? 0), 0)
+        return maxIndex + 1
+    }
+
+    function getCurrentRequestConfig() {
+        const method = methodInput.value
+        const url = urlInput.value.trim()
+        
+        // Build query params
+        const queryParams = {}
+        document.querySelectorAll('#queryList .param-item').forEach(item => {
+            const key = item.querySelector('.key-input').value
+            const value = item.querySelector('.value-input').value
+            if (key && value) {
+                queryParams[key] = value
+            }
+        })
+        
+        // Build headers
+        const headers = {}
+        document.querySelectorAll('#headersList .param-item').forEach(item => {
+            const key = item.querySelector('.key-input').value
+            const value = item.querySelector('.value-input').value
+            if (key && value) {
+                headers[key] = value
+            }
+        })
+        
+        // Build body
+        const bodyType = bodyTypeSelector.value
+        let bodyContent = null
+        if (bodyType === 'json') {
+            const jsonValue = document.getElementById('jsonBody').value.trim()
+            if (jsonValue) {
+                try {
+                    bodyContent = JSON.parse(jsonValue)
+                } catch (e) {
+                    bodyContent = jsonValue
+                }
+            }
+        }
+        
+        return {
+            method,
+            url,
+            params: queryParams,
+            headers,
+            body: { type: bodyType, content: bodyContent }
+        }
+    }
+
+    function saveRequest() {
+        if (!currentSelectedRequest) {
+            showWarning('No request selected')
+            return
+        }
+        
+        const config = getCurrentRequestConfig()
+        const oldId = currentSelectedRequest.id
+        
+        // Update or create the request
+        const index = savedRequests.findIndex(r => r.id === oldId)
+        if (index !== -1) {
+            savedRequests[index].config = config
+        } else {
+            savedRequests.push({ ...currentSelectedRequest, config })
+        }
+        
+        saveSavedRequests()
+        renderDrawerItems()
+        showSuccess('Request(s) saved successfully!')
+    }
+
+    function initSavedRequests() {
+        const data = appDb.getSavedRequests()
+        if (data && data != null && data.length > 0) {
+            savedRequests = data
+            currentSelectedRequest = savedRequests[0]
+            loadRequest(savedRequests[0].id)
+        } else {
+            savedRequests = [
+                { id: Date.now() * 1000000, name: 'default', pos_index: 0, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+            ]
+            appDb.saveSavedRequests(savedRequests)
+            currentSelectedRequest = savedRequests[0]
+            loadRequest(savedRequests[0].id)
+        }
+    }
+
     const methodBtns = document.querySelectorAll('.method-btn')
     const methodInput = document.getElementById('method')
     const bodySection = document.getElementById('bodySection')
@@ -8,245 +127,335 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryList = document.getElementById('queryList')
     const headersList = document.getElementById('headersList')
     const submitBtn = document.querySelector('.submit-btn')
+    const drawer = document.getElementById('drawer')
+    const overlay = document.getElementById('overlay')
+    const mainContainer = document.getElementById('mainContainer')
+    const drawerToggle = document.getElementById('drawerToggle')
+    const drawerContent = document.querySelector('.drawer-content')
 
-    // Toast system
-    const toastContainer = document.createElement('div')
-    toastContainer.id = 'toastContainer'
-    toastContainer.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        max-width: 400px;
-        pointer-events: none;
-    `
-    document.body.appendChild(toastContainer)
+    function toggleDrawer() {
+        const isOpen = drawer.classList.toggle('open')
+        overlay.classList.toggle('active')
+    }
 
-    function showToast(message, duration = 4000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast'
-        toast.style.cssText = `
-            background: #dc2626;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
+    drawerToggle.addEventListener('click', toggleDrawer)
 
-        // Close button
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
+    overlay.addEventListener('click', toggleDrawer)
+
+    // Render drawer items
+    function renderDrawerItems() {
+        drawerContent.innerHTML = ''
+        
+        if (savedRequests.length === 0) {
+            const emptyMsg = document.createElement('p')
+            emptyMsg.textContent = 'No saved requests'
+            emptyMsg.style.cssText = 'color: var(--text-secondary); text-align: center; padding: 2rem;'
+            drawerContent.appendChild(emptyMsg)
+            return
+        }
+
+        savedRequests.forEach(req => {
+            const item = document.createElement('div')
+            item.className = 'drawer-item'
+            item.dataset.reqId = req.id
+            if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
+                item.classList.add('selected')
+            }
+            item.style.cssText = `
+                padding: 0.75rem 1rem;
+                margin-top: 1rem;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: var(--transition);
+            `
+            item.addEventListener('click', () => loadRequest(req.id))
+
+            const nameSpan = document.createElement('span')
+            nameSpan.textContent = req.name
+            nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+
+            const editBtn = document.createElement('button')
+            editBtn.innerHTML = '✏️'
+            editBtn.type = 'button'
+            editBtn.style.cssText = `
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                transition: var(--transition);
+            `
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                editRequestName(req.id)
+            })
+            editBtn.title = 'Edit'
+
+            const deleteBtn = document.createElement('button')
+            deleteBtn.innerHTML = '×'
+            deleteBtn.type = 'button'
+            deleteBtn.style.cssText = `
+                background: var(--error-color);
+                border: none;
+                border-radius: 4px;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                font-weight: bold;
+                color: white;
+                transition: var(--transition);
+            `
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                deleteRequest(req.id)
+            })
+            deleteBtn.title = 'Delete'
+
+            const dragSpan = document.createElement('span')
+            dragSpan.innerHTML = "¦¦"
+            dragSpan.className = 'reorder-handle'
+            dragSpan.draggable = true
+            dragSpan.style.cssText = `
+                cursor: grab;
+                user-select: none;
+                color: var(--text-secondary);
+                font-size: 14px;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.2s;
+            `
+            dragSpan.addEventListener('dragstart', handleDragStart)
+            dragSpan.addEventListener('dragend', handleDragEnd)
+
+            item.appendChild(dragSpan)
+            item.appendChild(nameSpan)
+            item.appendChild(editBtn)
+            item.appendChild(deleteBtn)
+            drawerContent.appendChild(item)
         })
-
-        // Message
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
-
-        // Progress bar container
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            width: 100%;
-            animation-duration: ${duration}ms;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        // Auto remove after duration
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
     }
 
-    function showError(message, duration = 4000) {
-        showToast(message, duration)
+    let draggedItem = null
+
+    function handleDragStart(e) {
+        draggedItem = this.parentElement
+        this.style.opacity = '0.5'
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', draggedItem.id)
     }
 
-    function showWarning(message, duration = 5000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast toast-warning'
-        toast.style.cssText = `
-            background: #f59e0b;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
-
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
+    function handleDragEnd() {
+        this.style.opacity = '1'
+        draggedItem = null
+        
+        document.querySelectorAll('.drawer-item').forEach(item => {
+            item.style.backgroundColor = ''
         })
-
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
-
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            width: 100%;
-            animation-duration: ${duration}ms;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
     }
 
-    function showSuccess(message, duration = 3000) {
-        const toast = document.createElement('div')
-        toast.className = 'toast'
-        toast.style.cssText = `
-            background: #22c55e;
-            color: white;
-            padding: 1rem 1.25rem;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            max-width: 100%;
-            width: 100%;
-            animation: slideIn 0.3s ease;
-            pointer-events: auto;
-        `
+    drawerContent.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        
+        const afterElement = getDragAfterElement(drawerContent, e.clientY)
+        if (afterElement == null) {
+            drawerContent.appendChild(draggedItem)
+        } else {
+            drawerContent.insertBefore(draggedItem, afterElement)
+        }
+        
+        updateItemOrder()
+    })
 
-        const closeBtn = document.createElement('button')
-        closeBtn.className = 'toast-close'
-        closeBtn.innerHTML = '×'
-        closeBtn.type = 'button'
-        closeBtn.style.cssText = `
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            margin-top: 2px;
-            transition: all 0.2s ease;
-        `
-        closeBtn.addEventListener('click', () => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
+    drawerContent.addEventListener('drop', (e) => {
+        e.preventDefault()
+    })
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.drawer-item')].slice(0, 5)
+        
+        return draggableElements.reduce((closest, child) => {
+            if (child === draggedItem) return closest
+            const box = child.getBoundingClientRect()
+            const offset = y - box.top - box.height / 2
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child }
+            } else {
+                return closest
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element
+    }
+
+    function updateItemOrder() {
+        const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
+        
+        drawerItems.forEach((item, index) => {
+            const reqId = item.dataset.reqId
+            if (reqId) {
+                const req = savedRequests.find(r => r.id === parseInt(reqId))
+                if (req) {
+                    req.pos_index = index
+                }
+            }
         })
-
-        const messageSpan = document.createElement('span')
-        messageSpan.textContent = message
-        messageSpan.style.cssText = `
-            flex: 1;
-            font-size: 14px;
-            line-height: 1.4;
-            word-break: break-word;
-        `
-
-        const progressBar = document.createElement('div')
-        progressBar.className = 'toast-progress'
-        progressBar.style.cssText = `
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: rgba(255, 255, 255, 0.3);
-            width: 100%;
-            animation: progress ${duration}ms linear forwards;
-        `
-
-        toast.appendChild(closeBtn)
-        toast.appendChild(messageSpan)
-        toastContainer.appendChild(toast)
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease forwards'
-            setTimeout(() => toast.remove(), 300)
-        }, duration)
+        
+        appDb.saveSavedRequests(savedRequests)
     }
+
+    function loadRequest(id) {
+        const req = savedRequests.find(r => r.id === id)
+        if (!req) return
+
+        // Update current selected request
+        currentSelectedRequest = req
+
+        // Load the request configuration
+        const config = req.config || {
+            method: 'GET',
+            url: '',
+            params: {},
+            headers: {},
+            body: { type: 'none', content: null }
+        }
+
+          if (methodInput) methodInput.value = config.method || 'GET'
+          if (urlInput) urlInput.value = config.url || ''
+          
+          // Update method buttons
+          if (methodBtns && config.method) {
+              methodBtns.forEach(btn => {
+                  btn.classList.remove('active')
+                  if (btn.dataset.method === config.method) {
+                      btn.classList.add('active')
+                  }
+              })
+          }
+          
+          // Show/hide body section based on method
+          if (bodySection && config.method) {
+              if (['GET', 'HEAD', 'OPTIONS'].includes(config.method)) {
+                  bodySection.style.display = 'none'
+              } else {
+                  bodySection.style.display = 'block'
+              }
+          }
+
+        // Load query params
+        if (queryList) {
+            queryList.innerHTML = ''
+            Object.entries(config.params || {}).forEach(([key, value], idx) => {
+                const item = createParamItem('query')
+                item.querySelector('.key-input').value = key
+                item.querySelector('.value-input').value = value
+                item.style.marginTop = idx > 0 ? '0.5rem' : ''
+                queryList.appendChild(item)
+            })
+        }
+
+        // Load headers
+        if (headersList) {
+            headersList.innerHTML = ''
+            Object.entries(config.headers || {}).forEach(([key, value], idx) => {
+                const item = createParamItem('header')
+                item.querySelector('.key-input').value = key
+                item.querySelector('.value-input').value = value
+                item.style.marginTop = idx > 0 ? '0.5rem' : ''
+                headersList.appendChild(item)
+            })
+        }
+
+        // Load body
+        if (bodyTypeSelector) {
+            bodyTypeSelector.value = config.body?.type || 'none'
+            const bodyType = bodyTypeSelector.value
+            const bodyNone = document.getElementById('bodyNone')
+            const bodyJson = document.getElementById('bodyJson')
+            const bodyMultipart = document.getElementById('bodyMultipart')
+
+            bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
+            bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
+            bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
+
+            if (bodyType === 'json' && config.body?.content) {
+                const jsonBody = document.getElementById('jsonBody')
+                if (jsonBody) {
+                    if (typeof config.body.content === 'object') {
+                        jsonBody.value = JSON.stringify(config.body.content, null, 2)
+                    } else {
+                        jsonBody.value = config.body.content
+                    }
+                }
+            }
+        }
+
+        renderDrawerItems()
+    }
+
+    function editRequestName(id) {
+        const req = savedRequests.find(r => r.id === id)
+        if (!req) return
+
+        const newName = prompt('Enter new name:', req.name)
+        if (newName && newName.trim()) {
+            const oldId = req.id
+            req.id = Date.now() * 1000000
+            req.name = newName.trim()
+            req.config = getCurrentRequestConfig()
+            saveSavedRequests()
+            
+            // Update currentSelectedRequest to point to the same request (if it was selected)
+            if (currentSelectedRequest) {
+                const updatedRequest = savedRequests.find(r => r.id === req.id)
+                if (updatedRequest) {
+                    currentSelectedRequest = updatedRequest
+                } else {
+                    // If we can't find it, keep the old request reference
+                    currentSelectedRequest = req
+                }
+            }
+            
+            renderDrawerItems()
+        }
+    }
+
+    function deleteRequest(id) {
+        const req = savedRequests.find(r => r.id === id)
+        if (!req) {
+            showWarning('Request not found')
+            return
+        }
+
+        if (savedRequests.length <= 1) {
+            showWarning('Cannot delete the last request')
+            return
+        }
+
+        if (req.id === currentSelectedRequest?.id) {
+            showWarning('Cannot delete current request')
+            return
+        }
+
+        if (confirm(`Delete request "${req.name}"?`)) {
+            savedRequests = savedRequests.filter(r => r.id !== id)
+            saveSavedRequests()
+            renderDrawerItems()
+            showSuccess('Request deleted')
+        }
+    }
+
+    document.getElementById('addRequestBtn').addEventListener('click', addNewRequest)
 
     methodBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -618,4 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     })
+
+    document.getElementById('saveBtn').addEventListener('click', saveRequest)
+
+    initSavedRequests()
+    renderDrawerItems()
 })
