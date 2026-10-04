@@ -5,7 +5,7 @@ let savedRequests = []
 let currentSelectedRequest = null
 let envVars = []
 let folders = []
-let collapsedFolders = new Set()
+let expandedFolders = new Set()
 
 document.addEventListener('DOMContentLoaded', () => {
     function saveSavedRequests() {
@@ -231,14 +231,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return
         }
 
+        // Group requests by folder
+        const requestsByFolder = {}
+        const rootRequests = []
+        
         savedRequests.forEach(req => {
-            const item = document.createElement('div')
-            item.className = 'drawer-item'
-            item.dataset.reqId = req.id
-            if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
-                item.classList.add('selected')
+            const folderId = req.folder_id
+            if (folderId === null || folderId === undefined) {
+                rootRequests.push(req)
+            } else {
+                if (!requestsByFolder[folderId]) {
+                    requestsByFolder[folderId] = []
+                }
+                requestsByFolder[folderId].push(req)
             }
-            item.style.cssText = `
+        })
+
+        // Sort requests by pos_index within each group
+        rootRequests.sort((a, b) => (a.pos_index || 0) - (b.pos_index || 0))
+        Object.values(requestsByFolder).forEach(reqs => {
+            reqs.sort((a, b) => (a.pos_index || 0) - (b.pos_index || 0))
+        })
+
+        // Render folders first
+        folders.forEach(folder => {
+            const folderItem = document.createElement('div')
+            folderItem.className = 'drawer-item folder-item'
+            folderItem.dataset.folderId = folder.id
+            folderItem.style.cssText = `
                 padding: 0.75rem 1rem;
                 margin-top: 1rem;
                 border-radius: var(--radius-sm);
@@ -247,9 +267,178 @@ document.addEventListener('DOMContentLoaded', () => {
                 align-items: center;
                 gap: 0.5rem;
                 transition: var(--transition);
+                background: var(--bg-secondary);
+            `
+            folderItem.addEventListener('click', (e) => {
+                e.stopPropagation()
+                toggleFolder(folder.id)
+            })
+
+            // Chevron icon (collapsed/expanded)
+            const chevron = document.createElement('button')
+            chevron.type = 'button'
+            const isCollapsed = expandedFolders.has(folder.id)
+            chevron.innerHTML = isCollapsed ? 
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>' :
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+            chevron.style.cssText = `
+                background: transparent;
+                border: none;
+                color: var(--text-secondary);
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            `
+            chevron.addEventListener('mouseenter', () => {
+                chevron.style.color = 'var(--primary-color)'
+            })
+            chevron.addEventListener('mouseleave', () => {
+                chevron.style.color = 'var(--text-secondary)'
+            })
+            chevron.addEventListener('click', (e) => {
+                e.stopPropagation()
+                toggleFolder(folder.id)
+            })
+
+            // Folder name with folder icon
+            const folderNameSpan = document.createElement('span')
+            folderNameSpan.textContent = folder.name
+            folderNameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+
+            const folderIcon = document.createElement('svg')
+            folderIcon.setAttribute('width', '16')
+            folderIcon.setAttribute('height', '16')
+            folderIcon.setAttribute('viewBox', '0 0 24 24')
+            folderIcon.setAttribute('fill', 'none')
+            folderIcon.setAttribute('stroke', 'currentColor')
+            folderIcon.setAttribute('stroke-width', '2')
+            folderIcon.innerHTML = '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"></path>'
+            folderIcon.style.color = 'var(--primary-color)'
+            folderIcon.style.flexShrink = '0'
+
+            chevron.appendChild(folderIcon)
+            folderItem.appendChild(chevron)
+            folderItem.appendChild(folderNameSpan)
+
+            // Edit button
+            const editFolderBtn = document.createElement('button')
+            editFolderBtn.type = 'button'
+            editFolderBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
+            editFolderBtn.style.cssText = `
+                background: var(--bg-tertiary);
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                color: var(--text-secondary);
+                flex-shrink: 0;
+                margin-right: 4px;
+            `
+            editFolderBtn.addEventListener('mouseenter', () => {
+                editFolderBtn.style.transform = 'scale(1.1)';
+                editFolderBtn.style.backgroundColor = 'var(--primary-color)';
+                editFolderBtn.style.borderColor = 'var(--primary-color)';
+                editFolderBtn.style.color = 'white';
+            })
+            editFolderBtn.addEventListener('mouseleave', () => {
+                editFolderBtn.style.transform = 'scale(1)';
+                editFolderBtn.style.backgroundColor = 'var(--bg-tertiary)';
+                editFolderBtn.style.borderColor = 'var(--border-color)';
+                editFolderBtn.style.color = 'var(--text-secondary)';
+            })
+            editFolderBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                editFolderName(folder.id)
+            })
+            editFolderBtn.title = 'Edit Folder Name'
+
+            // Delete button
+            const deleteFolderBtn = document.createElement('button')
+            deleteFolderBtn.type = 'button'
+            deleteFolderBtn.innerHTML = '×'
+            deleteFolderBtn.style.cssText = `
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                border: none;
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                font-weight: 600;
+                color: white;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+                flex-shrink: 0;
+            `
+            deleteFolderBtn.addEventListener('mouseenter', () => {
+                deleteFolderBtn.style.transform = 'scale(1.1)';
+                deleteFolderBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
+            })
+            deleteFolderBtn.addEventListener('mouseleave', () => {
+                deleteFolderBtn.style.transform = 'scale(1)';
+                deleteFolderBtn.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+            })
+            deleteFolderBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                deleteFolder(folder.id)
+            })
+            deleteFolderBtn.title = 'Delete Folder'
+
+            folderItem.appendChild(editFolderBtn)
+            folderItem.appendChild(deleteFolderBtn)
+            drawerContent.appendChild(folderItem)
+
+            // Only render requests for expanded folders
+            if (!isCollapsed && requestsByFolder[folder.id]) {
+                renderDrawerItemsInternal(requestsByFolder[folder.id], folder.id)
+            }
+        })
+
+        // Render root requests
+        renderDrawerItemsInternal(rootRequests, null)
+    }
+
+    // Internal function to render requests
+    function renderDrawerItemsInternal(requests, folderId) {
+        requests.forEach(req => {
+            const item = document.createElement('div')
+            item.className = 'drawer-item'
+            item.dataset.reqId = req.id
+            // Ensure folder_id is properly set (null, number, or undefined)
+            const reqFolderId = req.folder_id === undefined ? null : req.folder_id
+            item.dataset.folderId = reqFolderId
+            if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
+                item.classList.add('selected')
+            }
+            const marginLeft = folderId ? 'margin-left: 20px;' : ''
+            item.style.cssText = `
+                padding: 0.75rem 1rem;
+                margin-top: 0.5rem;
+                ${marginLeft}
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: var(--transition);
+                background: var(--bg-tertiary);
             `
             item.addEventListener('click', () => loadRequest(req.id))
-
+            
             const nameSpan = document.createElement('span')
             nameSpan.textContent = req.name
             nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
@@ -277,7 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             editBtn.title = 'Edit'
 
-            // Add hover effect for edit button
             editBtn.addEventListener('mouseenter', () => {
                 editBtn.style.transform = 'scale(1.1)';
                 editBtn.style.backgroundColor = 'var(--primary-color)';
@@ -316,7 +504,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             deleteBtn.title = 'Delete'
 
-            // Add hover effect for delete button
             deleteBtn.addEventListener('mouseenter', () => {
                 deleteBtn.style.transform = 'scale(1.1)';
                 deleteBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.4)';
@@ -351,19 +538,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let draggedItem = null
+    let draggedFolderId = null
+
+    function toggleFolder(folderId) {
+        if (expandedFolders.has(folderId)) {
+            expandedFolders.delete(folderId)
+        } else {
+            expandedFolders.add(folderId)
+        }
+        renderDrawerItems()
+    }
 
     function handleDragStart(e) {
         draggedItem = this.parentElement
+        draggedFolderId = draggedItem.dataset.folderId || null
         this.style.opacity = '0.5'
         e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/plain', draggedItem.id)
+        e.dataTransfer.setData('text/plain', draggedItem.dataset.reqId)
     }
 
     function handleDragEnd() {
         this.style.opacity = '1'
         draggedItem = null
+        draggedFolderId = null
         
         document.querySelectorAll('.drawer-item').forEach(item => {
+            delete item.dataset.folderId
             item.style.backgroundColor = ''
         })
     }
@@ -372,18 +572,92 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault()
         e.dataTransfer.dropEffect = 'move'
         
-        const afterElement = getDragAfterElement(drawerContent, e.clientY)
-        if (afterElement == null) {
-            drawerContent.appendChild(draggedItem)
-        } else {
-            drawerContent.insertBefore(draggedItem, afterElement)
+        const target = e.target.closest('.drawer-item')
+        const isFolderItem = target && target.classList.contains('folder-item')
+    
+        if (isFolderItem) {
+            draggedItem.style.backgroundColor = 'var(--primary-color)'
         }
-        
-        updateItemOrder()
+    })
+
+    drawerContent.addEventListener('dragleave', (e) => {
+        const target = e.target.closest('.drawer-item')
+        if (target && target.classList.contains('folder-item')) {
+            target.style.backgroundColor = ''
+        }
     })
 
     drawerContent.addEventListener('drop', (e) => {
         e.preventDefault()
+        const target = e.target.closest('.drawer-item')
+        
+        if (!target) {
+            // Drop in empty area - move to root (folder_id = null)
+            const request = savedRequests.find(r => r.id === parseInt(draggedItem.dataset.reqId))
+            if (request) {
+                request.folder_id = null
+                request.config = getCurrentRequestConfig()
+                saveSavedRequests()
+                renderDrawerItems()
+                showSuccess('Request moved to root')
+            }
+            return
+        }
+
+        if (target.classList.contains('folder-item')) {
+            // Move request to folder
+            const targetFolderId = parseInt(target.dataset.folderId)
+            const request = savedRequests.find(r => r.id === parseInt(draggedItem.dataset.reqId))
+            if (request) {
+                request.folder_id = targetFolderId
+                request.config = getCurrentRequestConfig()
+                saveSavedRequests()
+                // Auto-expand the folder
+                if (!expandedFolders.has(targetFolderId)) {
+                    expandedFolders.add(targetFolderId)
+                }
+                showSuccess('Request moved to folder')
+            }
+        } else {
+            // Move between items (maintain folder)
+            const afterElement = getDragAfterElement(drawerContent, e.clientY)
+            if (afterElement == null) {
+                drawerContent.appendChild(draggedItem)
+            } else {
+                drawerContent.insertBefore(draggedItem, afterElement)
+            }
+        
+            // Get the folder_id of the target
+            const targetFolderId = target.dataset.folderId
+
+            // Update folder id for target
+            const draggedReqId = draggedItem.dataset.reqId
+            const draggedReq = savedRequests.find(r => r.id === parseInt(draggedReqId))
+            draggedReq.folder_id = targetFolderId
+
+            // Update pos_index for all items in the same group
+            const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
+            const itemsToSort = drawerItems.filter(item => {
+                const reqId = item.dataset.reqId
+                if (!reqId) return false
+                const req = savedRequests.find(r => r.id === parseInt(reqId))
+                if (!req) return false
+                // Only sort items in the same folder group
+                // Compare folder_id ensuring both are null or same value
+                const itemFolderId = req.folder_id === undefined ? null : req.folder_id
+                if (targetFolderId !== null && itemFolderId !== targetFolderId) return false
+                return true
+            })
+            itemsToSort.forEach((item, index) => {
+                const reqId = item.dataset.reqId
+                const req = savedRequests.find(r => r.id === parseInt(reqId))
+                if (req) {
+                    req.pos_index = index
+                }
+            })
+            appDb.saveSavedRequests(savedRequests)
+        }
+        renderDrawerItems()
     })
 
     function getDragAfterElement(container, y) {
@@ -406,10 +680,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         drawerItems.forEach((item, index) => {
             const reqId = item.dataset.reqId
+            const folderId = item.dataset.folderId
             if (reqId) {
                 const req = savedRequests.find(r => r.id === parseInt(reqId))
                 if (req) {
                     req.pos_index = index
+                    if (folderId) {
+                        req.folder_id = parseInt(folderId)
+                    }
                 }
             }
         })
@@ -540,9 +818,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentSelectedRequest = req
                 }
             }
-            
-            renderDrawerItems()
         }
+            
+        renderDrawerItems()
+    }
+
+    function loadFolders() {
+        folders = appDb.getFolders()
+    }
+
+    function editFolderName(folderId) {
+        const folder = folders.find(f => f.id === folderId)
+        if (!folder) return
+
+        const newName = prompt('Enter new folder name:', folder.name)
+        if (newName && newName.trim()) {
+            const oldId = folder.id
+            folder.name = newName.trim()
+            appDb.saveFolders(folders)
+            renderDrawerItems()
+            showSuccess('Folder name updated')
+        }
+    }
+
+    function deleteFolder(folderId) {
+        const folder = folders.find(f => f.id === folderId)
+        if (!folder) return
+        
+        // Confirm deletion
+        if (!confirm(`Delete folder "${folder.name}" and move all its requests to root?`)) {
+            return
+        }
+        
+        // Remove requests from this folder (set folder_id to null)
+        savedRequests.forEach(req => {
+            if (req.folder_id === folderId) {
+                req.folder_id = null
+                req.config = getCurrentRequestConfig()
+            }
+        })
+        
+        // Remove folder
+        folders = folders.filter(f => f.id !== folderId)
+        appDb.saveFolders(folders)
+        
+        // Update currentSelectedRequest if it was in the deleted folder
+        if (currentSelectedRequest && currentSelectedRequest.folder_id === folderId) {
+            const rootRequests = savedRequests.filter(r => r.folder_id === null)
+            if (rootRequests.length > 0) {
+                currentSelectedRequest = rootRequests[0]
+                loadRequest(currentSelectedRequest.id)
+            }
+        }
+        
+        renderDrawerItems()
+        showSuccess('Folder deleted')
     }
 
     function deleteRequest(id) {
@@ -967,7 +1297,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Export function
     function exportRequests() {
-        const dataStr = JSON.stringify(savedRequests, null, 2)
+        const exportData = {
+            version: 2,
+            requests: savedRequests,
+            folders: folders
+        }
+        const dataStr = JSON.stringify(exportData, null, 2)
         const dataBlob = new Blob([dataStr], { type: 'application/json' })
         const url = URL.createObjectURL(dataBlob)
         
@@ -977,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click()
         
         URL.revokeObjectURL(url)
-        showSuccess('Requests exported successfully!')
+        showSuccess('Requests and folders exported successfully!')
     }
 
     document.getElementById('exportBtn').addEventListener('click', exportRequests)
@@ -997,18 +1332,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const importedData = JSON.parse(event.target.result)
                     
-                    if (!Array.isArray(importedData)) {
-                        throw new Error('Invalid file format')
-                    }
-
-                    if (confirm(`Import ${importedData.length} requests? This will replace existing requests.`)) {
+                    // Handle v2 format with folders
+                    if (importedData.version === 2) {
+                        if (importedData.folders && Array.isArray(importedData.folders)) {
+                            folders = importedData.folders
+                            appDb.saveFolders(folders)
+                        }
+                        if (importedData.requests && Array.isArray(importedData.requests)) {
+                            savedRequests = importedData.requests
+                        }
+                    } 
+                    // Handle legacy format (array)
+                    else if (Array.isArray(importedData)) {
                         savedRequests = importedData.map((req, index) => ({
                             ...req,
                             id: index + 1
                         }))
+                        // Clear folders for legacy import
+                        folders = []
+                    } 
+                    else {
+                        throw new Error('Invalid file format')
+                    }
+
+                    if (confirm(`Import ${savedRequests.length} requests? This will replace existing requests.`)) {
                         appDb.saveSavedRequests(savedRequests)
                         renderDrawerItems()
-                        showSuccess('Requests imported successfully!')
+                        showSuccess('Requests and folders imported successfully!')
                     }
                 } catch (error) {
                     showError('Failed to import: ' + error.message)
@@ -1021,6 +1371,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('importBtn').addEventListener('click', importRequests)
+
+    // New Folder function
+    function createFolder() {
+        const name = prompt('Enter folder name:')
+        if (name && name.trim()) {
+            const newId = Date.now()
+            const newFolder = { id: newId, name: name.trim(), order: folders.length + 1 }
+            folders.push(newFolder)
+            appDb.saveFolders(folders)
+            renderDrawerItems()
+            showSuccess('Folder created successfully!')
+        }
+    }
+
+    document.getElementById('newFolderBtn').addEventListener('click', createFolder)
     
     const enableCookieToggle = document.getElementById('enableCookieToggle')
     const loadCookieBtn = document.getElementById('loadCookieBtn')
@@ -1290,6 +1655,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initSavedRequests()
+    loadFolders()
     renderDrawerItems()
     initEnvVars()
 })
+
+
