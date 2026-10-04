@@ -19,11 +19,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function createRequestInFolder(folderId) {
         const name = prompt('Enter request name:')
         if (name && name.trim()) {
+            const trimmedName = name.trim()
+            if (trimmedName.length > 24) {
+                showWarning('Request name too long. Maximum 24 characters allowed.')
+                return
+            }
             const newId = Date.now() * 1000000
             const newIndex = getNewIndex()
             const newRequest = {
                 id: newId,
-                name: name.trim(),
+                name: trimmedName,
                 pos_index: newIndex,
                 folder_id: folderId,
                 config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } }
@@ -795,32 +800,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderDrawerItems()
     }
-
     function editRequestName(id) {
         const req = savedRequests.find(r => r.id === id)
         if (!req) return
 
         const newName = prompt('Enter new name:', req.name)
         if (newName && newName.trim()) {
+            const trimmedName = newName.trim()
+            if (trimmedName.length > 24) {
+                showWarning('Request name too long. Maximum 24 characters allowed.')
+                return
+            }
             const oldId = req.id
             req.id = Date.now() * 1000000
-            req.name = newName.trim()
+            req.name = trimmedName
             req.config = getCurrentRequestConfig()
             saveSavedRequests()
             
-            // Update currentSelectedRequest to point to the same request (if it was selected)
             if (currentSelectedRequest) {
                 const updatedRequest = savedRequests.find(r => r.id === req.id)
                 if (updatedRequest) {
                     currentSelectedRequest = updatedRequest
                 } else {
-                    // If we can't find it, keep the old request reference
                     currentSelectedRequest = req
                 }
             }
-        }
             
-        renderDrawerItems()
+            renderDrawerItems()
+        }
     }
 
     function loadFolders() {
@@ -833,8 +840,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const newName = prompt('Enter new folder name:', folder.name)
         if (newName && newName.trim()) {
-            const oldId = folder.id
-            folder.name = newName.trim()
+            const trimmedName = newName.trim()
+            if (trimmedName.length > 24) {
+                showWarning('Folder name too long. Maximum 24 characters allowed.')
+                return
+            }
+            folder.name = trimmedName
             appDb.saveFolders(folders)
             renderDrawerItems()
             showSuccess('Folder name updated')
@@ -1376,12 +1387,26 @@ document.addEventListener('DOMContentLoaded', () => {
     function createFolder() {
         const name = prompt('Enter folder name:')
         if (name && name.trim()) {
-            const newId = Date.now()
-            const newFolder = { id: newId, name: name.trim(), order: folders.length + 1 }
-            folders.push(newFolder)
-            appDb.saveFolders(folders)
-            renderDrawerItems()
-            showSuccess('Folder created successfully!')
+            const trimmedName = name.trim()
+            if (trimmedName.length > 24) {
+                const newName = prompt('Name is too long. Maximum 24 characters. Enter new name:', trimmedName.substring(0, 24))
+                if (newName && newName.trim()) {
+                    const finalName = newName.trim()
+                    const newId = Date.now()
+                    const newFolder = { id: newId, name: finalName, order: folders.length + 1 }
+                    folders.push(newFolder)
+                    appDb.saveFolders(folders)
+                    renderDrawerItems()
+                    showSuccess('Folder created successfully!')
+                }
+            } else {
+                const newId = Date.now()
+                const newFolder = { id: newId, name: trimmedName, order: folders.length + 1 }
+                folders.push(newFolder)
+                appDb.saveFolders(folders)
+                renderDrawerItems()
+                showSuccess('Folder created successfully!')
+            }
         }
     }
 
