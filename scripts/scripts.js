@@ -313,7 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Folder name with folder icon
             const folderNameSpan = document.createElement('span')
             folderNameSpan.textContent = folder.name
-            folderNameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+            folderNameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+
+            // Set font weight based on selection
+            if (currentSelectedRequest && (currentSelectedRequest.folder_id === folder.id || (typeof currentSelectedRequest.folder_id === 'string' && currentSelectedRequest.folder_id === folder.id.toString()))) {
+                folderNameSpan.style.fontWeight = '700'
+            } else {
+                folderNameSpan.style.fontWeight = '500'
+            }
 
             const folderIcon = document.createElement('svg')
             folderIcon.setAttribute('width', '16')
@@ -444,10 +451,45 @@ document.addEventListener('DOMContentLoaded', () => {
             `
             item.addEventListener('click', () => loadRequest(req.id))
             
-            const nameSpan = document.createElement('span')
-            nameSpan.textContent = req.name
-            nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+            const methodBadge = document.createElement('span')
+            const method = req.config.method || 'GET'
+            methodBadge.textContent = method?.toUpperCase()
+            methodBadge.style.cssText = `
+                font-size: 0.65rem;
+                padding: 0.15rem 0.45rem;
+                border-radius: 3px;
+                font-weight: 600;
+                text-transform: uppercase;
+                color: white;
+                width: 3.6rem;
+                text-align: center;
+                display: inline-block;
+            `
+            const getMethodColor = (m) => {
+                switch(m) {
+                    case 'GET': return '#3b82f6'
+                    case 'POST': return '#22c55e'
+                    case 'PUT': return '#f59e0b'
+                    case 'DELETE': return '#ef4444'
+                    case 'PATCH': return '#a855f7'
+                    case 'HEAD': return '#6b7280'
+                    case 'OPTIONS': return '#ec4899'
+                    default: return '#6b7280'
+                }
+            }
+            methodBadge.style.backgroundColor = getMethodColor(method)
+            
+              const nameSpan = document.createElement('span')
+              nameSpan.textContent = req.name
+              nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
 
+              // Set font weight based on selection
+              if (currentSelectedRequest && (currentSelectedRequest.id === req.id || (typeof currentSelectedRequest.id === 'string' && currentSelectedRequest.id === req.id.toString()))) {
+                  nameSpan.style.fontWeight = '700'
+              } else {
+                  nameSpan.style.fontWeight = '500'
+              }
+            
             const editBtn = document.createElement('button')
             editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
             editBtn.type = 'button'
@@ -535,6 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dragSpan.addEventListener('dragend', handleDragEnd)
 
             item.appendChild(dragSpan)
+            item.appendChild(methodBadge)
             item.appendChild(nameSpan)
             item.appendChild(editBtn)
             item.appendChild(deleteBtn)
@@ -1684,5 +1727,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderDrawerItems()
     initEnvVars()
 })
+
 
 
