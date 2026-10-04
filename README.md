@@ -13,6 +13,18 @@ A lightweight REST client application built with vanilla web technologies (HTML,
 - **Save Requests**: Save request configurations for quick access
 - **Import/Export**: Export all saved requests to JSON or import from a file
 - **Drag & Drop**: Reorder saved requests by dragging
+- **Folders**: Organize requests into folders with drag-and-drop
+
+## Folders
+
+Organize your requests into folders for better management:
+
+- **Create Folder**: Click "New Folder" button in the drawer to create a new folder
+- **Rename Folder**: Click the edit icon (✎) next to a folder to rename it
+- **Delete Folder**: Click the delete icon (✕) to delete a folder (requests move to root)
+- **Collapse/Expand**: Click the chevron icon to hide/show folder contents
+- **Move Requests**: Drag and drop requests between folders or to root
+- **Empty Folders**: Folders can exist without any requests
 
 ## Usage
 

@@ -51,7 +51,8 @@
 }
 
 .import-btn,
-.export-btn {
+.export-btn,
+.new-folder-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -67,13 +68,15 @@
 }
 
 .import-btn:hover,
-.export-btn:hover {
+.export-btn:hover,
+.new-folder-btn:hover {
     background: var(--bg-secondary);
     border-color: var(--primary-color);
 }
 
 .import-btn svg,
-.export-btn svg {
+.export-btn svg,
+.new-folder-btn svg {
     width: 18px;
     height: 18px;
 }
@@ -225,6 +228,93 @@
 }
 
 .drawer-item .delete-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
+
+.drawer-folder-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    margin-top: 1rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    user-select: none;
+    transition: var(--transition);
+}
+
+.drawer-folder-header:hover {
+    border-color: var(--primary-color);
+}
+
+.drawer-folder-header.drag-over {
+    background: var(--bg-secondary);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.drawer-folder-header .chevron {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.drawer-folder-header.collapsed .chevron {
+    transform: rotate(-90deg);
+}
+
+.drawer-folder-header .folder-name {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.drawer-folder-header .folder-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition);
+    padding: 0;
+}
+
+.drawer-folder-header .folder-btn-new,
+.drawer-folder-header .folder-btn-rename {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.drawer-folder-header .folder-btn-new:hover,
+.drawer-folder-header .folder-btn-rename:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+.drawer-folder-header .folder-btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: none;
+    color: white;
+}
+
+.drawer-folder-header .folder-btn-delete:hover {
     background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
