@@ -16,6 +16,37 @@ document.addEventListener('DOMContentLoaded', () => {
         createRequestInFolder(null)
     }
 
+    function duplicateRequest(reqId){
+        if(confirm('Are you sure you want to duplicate this request?')){
+            const targetReqIndex = savedRequests.findIndex(req => req.id == reqId)
+            if(targetReqIndex < 0){
+                showError("Request not found to duplicate")
+                return
+            }
+
+            const targetReq = savedRequests[targetReqIndex]
+            const newId = getNewId()
+            const newRequest = {
+                id: newId,
+                name: getCopyName(targetReq.name),
+                pos_index: targetReq.pos_index,
+                folder_id: targetReq.folder_id,
+                config: structuredClone(targetReq.config)
+            }
+            savedRequests.splice(targetReqIndex + 1, 0, newRequest)
+            saveSavedRequests()
+            currentSelectedRequest = newRequest
+            loadRequest(newId)
+            renderDrawerItems()
+            showSuccess('Request duplicated')
+            closeDrawer()
+        }
+    }
+
+    function getCopyName(name){
+        return name.substring(0, Math.min(19, name.length)) + " Copy"
+    }
+
     function createRequestInFolder(folderId) {
         const name = prompt('Enter request name:')
         if (name && name.trim()) {
@@ -24,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showWarning('Request name too long. Maximum 24 characters allowed.')
                 return
             }
-            const newId = Date.now() * 1000000
+            const newId = getNewId()
             const newIndex = getNewIndex()
             const newRequest = {
                 id: newId,
@@ -38,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentSelectedRequest = newRequest
             loadRequest(newId)
             renderDrawerItems()
-            showSuccess('New Request')
+            showSuccess('New request created')
             closeDrawer()
         }
     }
@@ -46,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function getNewIndex() {
         const maxIndex = Math.max(...savedRequests.map(req => req.pos_index ?? 0), 0)
         return maxIndex + 1
+    }
+
+    function getNewId(){
+        return Date.now()
     }
 
     function getCurrentRequestConfig() {
@@ -131,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadRequest(savedRequests[0].id)
         } else {
             savedRequests = [
-                { id: Date.now() * 1000000, name: 'default', pos_index: 0, folder_id: null, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
+                { id: getNewId(), name: 'default', pos_index: 0, folder_id: null, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
             ]
             appDb.saveSavedRequests(savedRequests)
             currentSelectedRequest = savedRequests[0]
@@ -247,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         savedRequests.forEach(req => {
             const folderId = req.folder_id
-            if (folderId === null || folderId === undefined) {
+            if (folderId === null || folderId === undefined || folders.findIndex(f => f.id == req.folder_id) < 0) {
                 rootRequests.push(req)
             } else {
                 if (!requestsByFolder[folderId]) {
@@ -531,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentSelectedRequest && currentSelectedRequest.id === req.id) {
                 item.classList.add('selected')
             }
-            const marginLeft = folderId ? 'margin-left: 20px;' : ''
+            const marginLeft = folderId && folderId != null ? 'margin-left: 20px;' : ''
             item.style.cssText = `
                 padding: 0.75rem 1rem;
                 margin-top: 0.5rem;
@@ -574,16 +609,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             methodBadge.style.backgroundColor = getMethodColor(method)
             
-              const nameSpan = document.createElement('span')
-              nameSpan.textContent = req.name
-              nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+            const nameSpan = document.createElement('span')
+            nameSpan.textContent = req.name
+            nameSpan.style.cssText = 'flex: 1; color: var(--text-primary); font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
 
-              // Set font weight based on selection
-              if (currentSelectedRequest && (currentSelectedRequest.id === req.id || (typeof currentSelectedRequest.id === 'string' && currentSelectedRequest.id === req.id.toString()))) {
-                  nameSpan.style.fontWeight = '700'
-              } else {
-                  nameSpan.style.fontWeight = '500'
-              }
+            // Set font weight based on selection
+            if (currentSelectedRequest && (currentSelectedRequest.id === req.id || (typeof currentSelectedRequest.id === 'string' && currentSelectedRequest.id === req.id.toString()))) {
+                nameSpan.style.fontWeight = '700'
+            } else {
+                nameSpan.style.fontWeight = '500'
+            }
             
             const editBtn = document.createElement('button')
             editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
@@ -619,6 +654,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 editBtn.style.backgroundColor = 'var(--card-bg)';
                 editBtn.style.borderColor = 'var(--border-color)';
                 editBtn.style.color = 'var(--text-secondary)';
+            })
+
+            const duplicateBtn = document.createElement('button')
+            duplicateBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
+            duplicateBtn.type = 'button'
+            duplicateBtn.style.cssText = `
+                background: var(--card-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                width: 28px;
+                height: 28px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                transition: all 0.2s ease;
+                color: var(--text-secondary);
+            `
+            duplicateBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                duplicateRequest(req.id)
+            })
+            duplicateBtn.title = 'Edit'
+
+            duplicateBtn.addEventListener('mouseenter', () => {
+                duplicateBtn.style.transform = 'scale(1.1)';
+                duplicateBtn.style.backgroundColor = 'var(--primary-color)';
+                duplicateBtn.style.borderColor = 'var(--primary-color)';
+                duplicateBtn.style.color = 'white';
+            })
+            duplicateBtn.addEventListener('mouseleave', () => {
+                duplicateBtn.style.transform = 'scale(1)';
+                duplicateBtn.style.backgroundColor = 'var(--card-bg)';
+                duplicateBtn.style.borderColor = 'var(--border-color)';
+                duplicateBtn.style.color = 'var(--text-secondary)';
             })
 
             const deleteBtn = document.createElement('button')
@@ -675,6 +746,7 @@ document.addEventListener('DOMContentLoaded', () => {
             item.appendChild(methodBadge)
             item.appendChild(nameSpan)
             item.appendChild(editBtn)
+            item.appendChild(duplicateBtn)
             item.appendChild(deleteBtn)
             drawerContent.appendChild(item)
         })
@@ -953,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Remove requests from this folder (set folder_id to null)
         savedRequests.forEach(req => {
-            if (req.folder_id === folderId) {
+            if (parseInt(req.folder_id) == folderId) {
                 req.folder_id = null
             }
         })
@@ -963,6 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let fPos = 1
         folders.forEach(f => f.order = fPos++)
         appDb.saveFolders(folders)
+        appDb.saveSavedRequests(savedRequests)
         
         // Update currentSelectedRequest if it was in the deleted folder
         if (currentSelectedRequest && currentSelectedRequest.folder_id === folderId) {
@@ -1005,6 +1078,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('addRequestDrawerBtn').addEventListener('click', addNewRequest)
     document.getElementById('addRequestBtn').addEventListener('click', addNewRequest)
+
+    // Export/Import Environment Variables
+    function exportEnvVars() {
+        try {
+            const envVars = appDb.getEnvVars()
+            const data = {
+                version: 1,
+                envVars: envVars
+            }
+            const json = JSON.stringify(data, null, 2)
+            const blob = new Blob([json], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'env-vars-export.json'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+            showSuccess('Environment variables exported successfully')
+        } catch (error) {
+            console.error('Error exporting environment variables:', error)
+            showError('Failed to export environment variables')
+        }
+    }
+
+    function importEnvVars(event) {
+        const file = event.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result)
+                
+                if (!data.version || data.version !== 1) {
+                    throw new Error('Invalid export format')
+                }
+                
+                if (!Array.isArray(data.envVars)) {
+                    throw new Error('Invalid envVars format')
+                }
+                
+                // Validate and process env vars
+                console.log(data)
+                const importedVars = data.envVars.map(env => ({
+                    id: env.id || Date.now(),
+                    key: env.key || '',
+                    value: env.value || ''
+                })).filter(env => env.key && env.value)
+                
+                if (importedVars.length === 0) {
+                    throw new Error('No valid environment variables to import')
+                }
+                
+                // Clear existing and import new vars
+                appDb.saveEnvVars(importedVars)
+                envVars = importedVars
+                renderEnvVars()
+                showSuccess(`Successfully imported ${importedVars.length} environment variable(s)`)
+            } catch (error) {
+                console.error('Error importing environment variables:', error)
+                showError('Failed to import environment variables: ' + error.message)
+            }
+        }
+        reader.readAsText(file)
+        event.target.value = ''
+    }
+
+    document.getElementById('exportEnvBtn').addEventListener('click', exportEnvVars)
+    document.getElementById('importEnvBtn').addEventListener('click', () => {
+        document.getElementById('importEnvFile').click()
+    })
+    document.getElementById('importEnvFile').addEventListener('change', importEnvVars)
 
     methodBtns.forEach(btn => {
         btn.addEventListener('click', () => {

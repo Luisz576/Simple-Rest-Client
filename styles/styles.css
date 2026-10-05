@@ -64,7 +64,7 @@
 }
 
 .drawer-header {
-    padding: 0.5rem 1.5rem 1rem 1.5rem;
+    padding: 0.8rem 1.5rem;
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);
 }
@@ -1572,15 +1572,14 @@ footer a:hover {
 
 .env-buttons {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
-.add-env-btn {
+.env-buttons .dialog-btn {
     flex: 1;
-}
-
-.clear-env-btn {
-    flex: 1;
+    min-width: 120px;
 }
 
 .env-list {
@@ -1601,16 +1600,33 @@ footer a:hover {
     margin-bottom: 0.75rem;
 }
 
+.export-env-btn,
+.import-env-btn,
 .add-env-btn {
-    background: var(--primary-color);
     border: none;
     color: white;
+}
+
+.add-env-btn{
+    background: var(--primary-color);
+}
+
+.export-env-btn,
+.import-env-btn {
+    background: var(--bg-tertiary);
 }
 
 .add-env-btn:hover {
     background: var(--primary-hover);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.export-env-btn:hover,
+.import-env-btn:hover {
+    background: var(--bg-secondary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(32, 32, 37, 0.3);
 }
 
 .clear-env-btn {
