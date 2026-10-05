@@ -160,12 +160,13 @@
 }
 
 .history-url {
+    position: relative;
     flex: 1;
     color: var(--text-primary);
     font-size: 0.875rem;
-    white-space: nowrap;
-    overflow: hidden;
+    overflow-wrap: anywhere;
     text-overflow: ellipsis;
+    max-width: 100%;
     margin-left: 0.5rem;
     font-family: 'Fira Code', 'Consolas', monospace;
 }
@@ -982,6 +983,12 @@ main {
     font-size: 0.9rem;
     font-family: 'Fira Code', 'Consolas', monospace;
     transition: var(--transition);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    min-height: 42px;
+    line-height: 1.5;
+    hyphens: auto;
 }
 
 .url-input:focus {
