@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadRequest(newId)
             renderDrawerItems()
             showSuccess('New Request')
-            toggleDrawer()
+            closeDrawer()
         }
     }
 
@@ -190,8 +190,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cookieIconWrapper.addEventListener('mouseleave', () => cookieTooltip.style.display = 'none')
     }
 
+    function closeDrawer(){
+        drawer.classList.remove('open')
+        overlay.classList.remove('active')
+    }
+
     function toggleDrawer() {
-        const isOpen = drawer.classList.toggle('open')
+        drawer.classList.toggle('open')
         overlay.classList.toggle('active')
     }
 
@@ -998,6 +1003,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    document.getElementById('addRequestDrawerBtn').addEventListener('click', addNewRequest)
     document.getElementById('addRequestBtn').addEventListener('click', addNewRequest)
 
     methodBtns.forEach(btn => {
