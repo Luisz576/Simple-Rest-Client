@@ -31,14 +31,12 @@ class RestClient {
             })
 
             const data = await response.json()
-            const setCookie = response.headers.get('set-cookie')
 
             return {
                 status: response.status,
                 statusText: response.statusText,
                 headers: response.headers,
                 data,
-                setCookie,
                 cookie: options.cookie
             }
         } catch (error) {

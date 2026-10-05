@@ -1443,15 +1443,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `
         }
 
-        if (response.setCookie) {
-            html += `
-                <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid #10b981;">
-                    <strong style="color: #34d399; font-size: 0.9rem; font-weight: 600;">Set-Cookie:</strong>
-                    <code style="background: transparent; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; color: #6ee7b7; word-break: break-all; overflow-wrap: break-word;">${response.setCookie}</code>
-                </div>
-            `
-        }
-
         if (response.data) {
                 html += `
                     <div>
@@ -1532,7 +1523,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         timestamp: new Date().toISOString(),
                         data: response.data,
                         headers: response.headers,
-                        setCookie: response.setCookie,
                         error: response.error
                     }
                 )
@@ -1544,7 +1534,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         status: response.status,
                         statusText: response.statusText,
                         error: errorMessage,
-                        setCookie: response.setCookie,
                         cookie: cookie
                     })
                 } else {
@@ -1951,7 +1940,6 @@ document.addEventListener('DOMContentLoaded', () => {
             timestamp: new Date().toISOString(),
             data: response.data,
             headers: response.headers,
-            setCookie: response.setCookie,
             error: response.error
         }
         
@@ -2009,6 +1997,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 bodyHtml = '<span style="color: #6b7280;">No response body</span>'
             }
 
+            let headersHtml = ''
+            if (item.headers && Object.keys(item.headers).length > 0) {
+                const headers = Object.entries(item.headers)
+                headersHtml = `<pre style="margin: 0; font-size: 0.65rem; line-height: 1.4; color: #94a3b8; margin-bottom: 0.5rem;">${JSON.stringify(headers, null, 1)}</pre>`
+            }
+
             const itemHtml = `
                 <div class="history-item" data-id="${item.id}">
                     <div class="history-item-header">
@@ -2030,9 +2024,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="history-content-meta">
                         <span class="history-time">${time}</span>
-                        ${item.setCookie ? '<span style="color: #34d399; font-size: 0.7rem; font-weight: 600;">✓ Cookie</span>' : ''}
                     </div>
                     <div class="history-body">
+                        ${headersHtml}
                         ${bodyHtml}
                     </div>
                 </div>
