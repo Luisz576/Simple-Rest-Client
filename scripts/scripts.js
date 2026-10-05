@@ -1894,17 +1894,19 @@ document.addEventListener('DOMContentLoaded', () => {
     })
 
     const cookieTokenInput = document.getElementById('cookieTokenInput')
-    cookieTokenInput.addEventListener('blur', () => {
+    cookieTokenInput.addEventListener('input', () => {
         if (cookieTokenInput.value.trim()) {
             saveSessionToken(cookieTokenInput.value.trim())
-            showSuccess('Session token saved')
+        } else {
+            localStorage.removeItem('session_token')
+            localStorage.removeItem('session_expires')
         }
     })
 
     clearSessionBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear the session token?')) {
             clearSessionToken()
-            document.getElementById('cookieTokenInput').value = ''
+            cookieTokenInput.value = ''
             showSuccess('Session cleared')
         }
     })
