@@ -679,7 +679,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation()
                 duplicateRequest(req.id)
             })
-            duplicateBtn.title = 'Edit'
+            duplicateBtn.title = 'Duplicate'
 
             duplicateBtn.addEventListener('mouseenter', () => {
                 duplicateBtn.style.transform = 'scale(1.1)';
