@@ -300,6 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render folders first
         folders.forEach(folder => {
+            const isCurrentSelectedFolder = folder.id == parseInt(currentSelectedRequest.folder_id)
+
             const folderItem = document.createElement('div')
             folderItem.className = 'drawer-item folder-item'
             folderItem.dataset.folderId = folder.id
@@ -324,8 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
             chevron.type = 'button'
             const isCollapsed = !expandedFolders.has(folder.id)
             chevron.innerHTML = isCollapsed ? 
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/></svg>' :
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/><path d="M2 9h20M6 11h12"/></svg>'
+                `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${isCurrentSelectedFolder ? '4' : '2'}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/></svg>` :
+                `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${isCurrentSelectedFolder ? '4' : '2'}"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/><path d="M2 9h20M6 11h12"/></svg>`
             chevron.style.cssText = `
                 background: transparent;
                 border: none;
