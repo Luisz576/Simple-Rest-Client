@@ -1,6 +1,8 @@
 const SAVED_REQUESTS_KEY = "rest_client_requests"
 const ENVIRONMENT_VARS_KEY = "rest_client_env_vars"
 const FOLDERS_KEY = "rest_client_folders"
+const HISTORY_KEY = "rest_client_history"
+const MAX_HISTORY = 100
 
 class AppDB {
     saveSavedRequests(data) {
@@ -97,6 +99,67 @@ class AppDB {
         })
 
         return sortedData
+    }
+
+    saveHistory(data) {
+        try {
+            const existing = this.getHistory()
+            const newData = [...data, ...existing]
+
+            // Limit to MAX_HISTORY (100 items)
+            if (newData.length > MAX_HISTORY) {
+                newData.splice(MAX_HISTORY)
+            }
+
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(newData))
+            return newData
+        } catch (e) {
+            console.error('Error saving history:', e)
+            return data
+        }
+    }
+
+    saveLikeThisHistory(data) {
+        try {
+            const newData = [...data]
+
+            // Limit to MAX_HISTORY (100 items)
+            if (newData.length > MAX_HISTORY) {
+                newData.splice(MAX_HISTORY)
+            }
+
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(newData))
+            return newData
+        } catch (e) {
+            console.error('Error saving history:', e)
+            return data
+        }
+    }
+
+    clearHistory() {
+        try {
+            localStorage.setItem(HISTORY_KEY, JSON.stringify([]))
+            return true
+        } catch (e) {
+            console.error('Error saving history:', e)
+            return false
+        }
+    }
+
+    getHistory() {
+        try {
+            const data = localStorage.getItem(HISTORY_KEY)
+            if (data) {
+                const parsed = JSON.parse(data)
+                if (Array.isArray(parsed)) {
+                    return parsed
+                }
+            }
+            return []
+        } catch (e) {
+            console.error('Error retrieving history:', e)
+            return []
+        }
     }
 }
 
