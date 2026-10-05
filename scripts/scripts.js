@@ -282,10 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Chevron icon (collapsed/expanded)
             const chevron = document.createElement('button')
             chevron.type = 'button'
-            const isCollapsed = expandedFolders.has(folder.id)
+            const isCollapsed = !expandedFolders.has(folder.id)
             chevron.innerHTML = isCollapsed ? 
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>' :
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/></svg>' :
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2z"/><path d="M2 9h20M6 11h12"/></svg>'
             chevron.style.cssText = `
                 background: transparent;
                 border: none;
@@ -308,6 +308,92 @@ document.addEventListener('DOMContentLoaded', () => {
             chevron.addEventListener('click', (e) => {
                 e.stopPropagation()
                 toggleFolder(folder.id)
+            })
+
+            // Up button
+            const upBtn = document.createElement('button')
+            upBtn.type = 'button'
+            upBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>'
+            upBtn.style.cssText = `
+                background: transparent;
+                border: none;
+                color: var(--text-secondary);
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            `
+            upBtn.addEventListener('mouseenter', () => {
+                upBtn.style.color = 'var(--primary-color)'
+            })
+            upBtn.addEventListener('mouseleave', () => {
+                upBtn.style.color = 'var(--text-secondary)'
+            })
+            upBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                if(folder.order <= 1){
+                    return
+                }
+                const foldersArr = [...folders]
+                for (let i = foldersArr.length - 1; i > 0; i--) {
+                    if (foldersArr[i].id === folder.id) {
+                        [foldersArr[i - 1], foldersArr[i]] = [foldersArr[i], foldersArr[i - 1]]
+                        break
+                    }
+                }
+                folders = foldersArr
+                let fPos = 1
+                folders.forEach(f => f.order = fPos++)
+                appDb.saveFolders(folders)
+                renderDrawerItems()
+                showSuccess('Folder order updated')
+            })
+
+            // Down button
+            const downBtn = document.createElement('button')
+            downBtn.type = 'button'
+            downBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>'
+            downBtn.style.cssText = `
+                background: transparent;
+                border: none;
+                color: var(--text-secondary);
+                cursor: pointer;
+                padding: 4px;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+                flex-shrink: 0;
+            `
+            downBtn.addEventListener('mouseenter', () => {
+                downBtn.style.color = 'var(--primary-color)'
+            })
+            downBtn.addEventListener('mouseleave', () => {
+                downBtn.style.color = 'var(--text-secondary)'
+            })
+            downBtn.addEventListener('click', (e) => {
+                e.stopPropagation()
+                if(folder.order >= folders.length){
+                    return
+                }
+                const foldersArr = [...folders]
+                for (let i = 0; i < foldersArr.length - 1; i++) {
+                    if (foldersArr[i].id === folder.id) {
+                        [foldersArr[i + 1], foldersArr[i]] = [foldersArr[i], foldersArr[i + 1]]
+                        break
+                    }
+                }
+                folders = foldersArr
+                let fPos = 1
+                folders.forEach(f => f.order = fPos++)
+                appDb.saveFolders(folders)
+                renderDrawerItems()
+                showSuccess('Folder order updated')
             })
 
             // Folder name with folder icon
@@ -410,6 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             deleteFolderBtn.title = 'Delete Folder'
 
+            folderItem.appendChild(chevron)
+            folderItem.appendChild(upBtn)
+            folderItem.appendChild(downBtn)
+            folderItem.appendChild(folderNameSpan)
             folderItem.appendChild(editFolderBtn)
             folderItem.appendChild(deleteFolderBtn)
             drawerContent.appendChild(folderItem)
@@ -586,7 +676,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let draggedItem = null
-    let draggedFolderId = null
 
     function toggleFolder(folderId) {
         if (expandedFolders.has(folderId)) {
@@ -686,26 +775,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSavedRequests()
         renderDrawerItems()
     })
-
-    function updateItemOrder() {
-        const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
-        
-        drawerItems.forEach((item, index) => {
-            const reqId = item.dataset.reqId
-            const folderId = item.dataset.folderId
-            if (reqId) {
-                const req = savedRequests.find(r => r.id === parseInt(reqId))
-                if (req) {
-                    req.pos_index = index
-                    if (folderId) {
-                        req.folder_id = parseInt(folderId)
-                    }
-                }
-            }
-        })
-        
-        appDb.saveSavedRequests(savedRequests)
-    }
 
     function loadRequest(id) {
         const req = savedRequests.find(r => r.id === id)
@@ -828,6 +897,21 @@ document.addEventListener('DOMContentLoaded', () => {
         folders = appDb.getFolders()
     }
 
+    function updateFolderOrderButtons() {
+        const upBtn = document.getElementById('folderOrderUpBtn')
+        const downBtn = document.getElementById('folderOrderDownBtn')
+        if (upBtn && downBtn) {
+            const foldersArr = [...folders]
+            upBtn.disabled = foldersArr.length <= 1
+            downBtn.disabled = foldersArr.length <= 1
+        }
+    }
+
+    // Update folder buttons on load
+    if (document.getElementById('folderOrderUpBtn')) {
+        updateFolderOrderButtons()
+    }
+
     function editFolderName(folderId) {
         const folder = folders.find(f => f.id === folderId)
         if (!folder) return
@@ -842,6 +926,7 @@ document.addEventListener('DOMContentLoaded', () => {
             folder.name = trimmedName
             appDb.saveFolders(folders)
             renderDrawerItems()
+            updateFolderOrderButtons()
             showSuccess('Folder name updated')
         }
     }
@@ -859,12 +944,13 @@ document.addEventListener('DOMContentLoaded', () => {
         savedRequests.forEach(req => {
             if (req.folder_id === folderId) {
                 req.folder_id = null
-                req.config = getCurrentRequestConfig()
             }
         })
         
         // Remove folder
         folders = folders.filter(f => f.id !== folderId)
+        let fPos = 1
+        folders.forEach(f => f.order = fPos++)
         appDb.saveFolders(folders)
         
         // Update currentSelectedRequest if it was in the deleted folder
@@ -877,6 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         renderDrawerItems()
+        updateFolderOrderButtons()
         showSuccess('Folder deleted')
     }
 
@@ -1399,6 +1486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 folders.push(newFolder)
                 appDb.saveFolders(folders)
                 renderDrawerItems()
+                updateFolderOrderButtons()
                 showSuccess('Folder created successfully!')
             }
         }
@@ -1675,6 +1763,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // initialize
     loadFolders()
+    // first folder is open by default
+    if(folders.length > 0){
+        expandedFolders.add(folders[0].id)
+    }
     initSavedRequests()
     initEnvVars()
     renderDrawerItems()
