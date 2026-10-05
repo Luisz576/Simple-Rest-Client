@@ -22,6 +22,30 @@
     transition: transform 0.3s ease-in-out;
 }
 
+.drawer-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.drawer-content::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.drawer-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.drawer-content::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+}
+
+.drawer-content::-webkit-scrollbar-corner {
+    background: var(--bg-primary);
+}
+
 .drawer.open {
     transform: translateX(0);
 }
