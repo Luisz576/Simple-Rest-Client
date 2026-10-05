@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 align-items: center;
                 gap: 0.5rem;
                 transition: var(--transition);
-                background: var(--bg-tertiary);
+                background: var(--card-bg);
             `
             item.addEventListener('click', () => loadRequest(req.id))
             
@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
             editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
             editBtn.type = 'button'
             editBtn.style.cssText = `
-                background: var(--bg-tertiary);
+                background: var(--card-bg);
                 border: 1px solid var(--border-color);
                 border-radius: 6px;
                 width: 28px;
@@ -521,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             editBtn.addEventListener('mouseleave', () => {
                 editBtn.style.transform = 'scale(1)';
-                editBtn.style.backgroundColor = 'var(--bg-tertiary)';
+                editBtn.style.backgroundColor = 'var(--card-bg)';
                 editBtn.style.borderColor = 'var(--border-color)';
                 editBtn.style.color = 'var(--text-secondary)';
             })
@@ -644,84 +644,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const request = savedRequests.find(r => r.id === parseInt(draggedItem.dataset.reqId))
             if (request) {
                 request.folder_id = null
-                request.config = getCurrentRequestConfig()
                 saveSavedRequests()
-                renderDrawerItems()
                 showSuccess('Request moved to root')
             }
             return
         }
 
+        let wasSaved = false
         if (target.classList.contains('folder-item')) {
-            // Move request to folder
-            const targetFolderId = parseInt(target.dataset.folderId)
-            const request = savedRequests.find(r => r.id === parseInt(draggedItem.dataset.reqId))
-            if (request) {
-                request.folder_id = targetFolderId
-                request.config = getCurrentRequestConfig()
-                saveSavedRequests()
-                // Auto-expand the folder
-                if (!expandedFolders.has(targetFolderId)) {
-                    expandedFolders.add(targetFolderId)
+            if(target.dataset.folderId && target.dataset.folderId != null){
+                // Move request to folder
+                const targetFolderId = parseInt(target.dataset.folderId)
+                const request = savedRequests.find(r => r.id === parseInt(draggedItem.dataset.reqId))
+                if (request) {
+                    request.folder_id = targetFolderId
                 }
-                showSuccess('Request moved to folder')
+                wasSaved = true
             }
         } else {
-            // Move between items (maintain folder)
-            const afterElement = getDragAfterElement(drawerContent, e.clientY)
-            if (afterElement == null) {
-                drawerContent.appendChild(draggedItem)
-            } else {
-                drawerContent.insertBefore(draggedItem, afterElement)
-            }
-        
-            // Get the folder_id of the target
-            const targetFolderId = target.dataset.folderId
+            const targetReqId = parseInt(target.dataset.reqId)
+            const targetIndex = savedRequests.findIndex(req => req.id == targetReqId)
+            const targetReq = savedRequests[targetIndex]
 
             // Update folder id for target
-            const draggedReqId = draggedItem.dataset.reqId
-            const draggedReq = savedRequests.find(r => r.id === parseInt(draggedReqId))
-            draggedReq.folder_id = targetFolderId
+            const draggedReqId = parseInt(draggedItem.dataset.reqId)
+            const draggedReqIndex = savedRequests.findIndex(req => req.id == draggedReqId)
+            const [draggedReq] = savedRequests.splice(draggedReqIndex, 1)
+            draggedReq.folder_id = targetReq.folder_id
 
-            // Update pos_index for all items in the same group
-            const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
-            const itemsToSort = drawerItems.filter(item => {
-                const reqId = item.dataset.reqId
-                if (!reqId) return false
-                const req = savedRequests.find(r => r.id === parseInt(reqId))
-                if (!req) return false
-                // Only sort items in the same folder group
-                // Compare folder_id ensuring both are null or same value
-                const itemFolderId = req.folder_id === undefined ? null : req.folder_id
-                if (targetFolderId !== null && itemFolderId !== targetFolderId) return false
-                return true
-            })
-            itemsToSort.forEach((item, index) => {
-                const reqId = item.dataset.reqId
-                const req = savedRequests.find(r => r.id === parseInt(reqId))
-                if (req) {
-                    req.pos_index = index
-                }
-            })
-            appDb.saveSavedRequests(savedRequests)
+            savedRequests.splice(targetIndex, 0, draggedReq)
+            wasSaved = true
         }
+
+        // Update pos_index for requests
+        let posIndex = 0
+        savedRequests.forEach(req => req.pos_index = posIndex++)
+
+        if(wasSaved){
+            showSuccess('Saved')
+        }
+        saveSavedRequests()
         renderDrawerItems()
     })
-
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.drawer-item')].slice(0, 5)
-        
-        return draggableElements.reduce((closest, child) => {
-            if (child === draggedItem) return closest
-            const box = child.getBoundingClientRect()
-            const offset = y - box.top - box.height / 2
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child }
-            } else {
-                return closest
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element
-    }
 
     function updateItemOrder() {
         const drawerItems = Array.from(drawerContent.querySelectorAll('.drawer-item'))
@@ -854,21 +818,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showWarning('Request name too long. Maximum 24 characters allowed.')
                 return
             }
-            const oldId = req.id
-            req.id = Date.now() * 1000000
             req.name = trimmedName
-            req.config = getCurrentRequestConfig()
             saveSavedRequests()
-            
-            if (currentSelectedRequest) {
-                const updatedRequest = savedRequests.find(r => r.id === req.id)
-                if (updatedRequest) {
-                    currentSelectedRequest = updatedRequest
-                } else {
-                    currentSelectedRequest = req
-                }
-            }
-            
             renderDrawerItems()
         }
     }
@@ -1722,11 +1673,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    initSavedRequests()
+    // initialize
     loadFolders()
-    renderDrawerItems()
+    initSavedRequests()
     initEnvVars()
+    renderDrawerItems()
 })
-
-
-
