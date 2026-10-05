@@ -18,8 +18,11 @@
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
-    transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
+}
+
+.drawer-left {
+    transform: translateX(-100%);
 }
 
 .drawer-content::-webkit-scrollbar {
@@ -50,6 +53,222 @@
     transform: translateX(0);
 }
 
+/* History Drawer (Right Sidebar) */
+.history-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 40vw;
+    background: var(--sidebar-bg);
+    border-left: 1px solid var(--border-color);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+    transform: translateX(100vw);
+    transition: transform 0.3s ease-in-out;
+}
+
+.sidebar.history-drawer.open {
+    transform: translateX(60vw);
+}
+
+.history-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.history-content::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.history-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.history-content::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+}
+
+.history-content::-webkit-scrollbar-corner {
+    background: var(--bg-primary);
+}
+
+/* History Item Card */
+.history-item {
+    position: relative;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.history-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: var(--primary-color);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.history-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+    border-color: var(--primary-color);
+}
+
+.history-item:hover::before {
+    opacity: 1;
+}
+
+.history-item.selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.history-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.history-method-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 60px;
+    justify-content: center;
+}
+
+.history-url {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left: 0.5rem;
+    font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.history-status {
+    padding: 0.25rem 0.625rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+}
+
+.history-content-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.75rem;
+}
+
+.history-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.history-body {
+    background: var(--bg-primary);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.75rem;
+    max-height: 150px;
+    overflow: auto;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.history-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.history-empty svg {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.history-empty p {
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* Method badge colors */
+.method-badge-GET { background: #3b82f6; color: white; }
+.method-badge-POST { background: #22c55e; color: white; }
+.method-badge-PUT { background: #f59e0b; color: white; }
+.method-badge-DELETE { background: #ef4444; color: white; }
+.method-badge-PATCH { background: #a855f7; color: white; }
+.method-badge-HEAD { background: #6b7280; color: white; }
+.method-badge-OPTIONS { background: #ec4899; color: white; }
+
+/* Status badge colors */
+.status-2xx { background: #22c55e; color: white; }
+.status-3xx { background: #f59e0b; color: white; }
+.status-4xx { background: #ef4444; color: white; }
+.status-5xx { background: #ef4444; color: white; }
+.status-error { background: #6b7280; color: white; }
+
+.remove-history-btn {
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 0.375rem 0.625rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.remove-history-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    transform: scale(1.1);
+}
+
+.remove-history-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 .drawer-content {
     flex: 1;
     overflow-y: auto;
@@ -64,9 +283,12 @@
 }
 
 .drawer-header {
-    padding: 0.8rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
 }
 
 .drawer-header-top {
@@ -112,11 +334,35 @@
     height: 18px;
 }
 
+.history-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.history-btn:hover {
+    background: var(--bg-secondary);
+    border-color: var(--primary-color);
+}
+
+.history-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 .drawer-title {
     color: var(--text-primary);
     font-size: 1.25rem;
     font-weight: 600;
-    margin: 0;
 }
 
 .add-request-btn {
@@ -368,6 +614,11 @@
 .overlay.active {
     opacity: 1;
     visibility: visible;
+}
+
+.history-overlay {
+    right: auto;
+    left: 0;
 }
 
 :root {
@@ -1597,7 +1848,6 @@ footer a:hover {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    margin-bottom: 0.75rem;
 }
 
 .export-env-btn,
@@ -1638,6 +1888,31 @@ footer a:hover {
 .clear-env-btn:hover {
     background: var(--border-color);
     color: var(--text-primary);
+}
+
+.clear-history-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.clear-history-btn:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.clear-history-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 .env-list {
