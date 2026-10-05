@@ -436,7 +436,9 @@ header {
 }
 
 .header-actions {
+    display: flex;
     margin-right: 0.5rem;
+    gap: 0.5rem;
 }
 
 .env-variables-btn {
