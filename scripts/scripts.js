@@ -858,6 +858,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const bodyJson = document.getElementById('bodyJson')
             const bodyMultipart = document.getElementById('bodyMultipart')
 
+            // Reset jsonBody when changing body type to prevent leftover content
+            const currentJsonBody = document.getElementById('jsonBody')
+            if (currentJsonBody && currentJsonBody.value) {
+                currentJsonBody.value = ''
+            }
+
             bodyNone.style.display = bodyType === 'none' ? 'block' : 'none'
             bodyJson.style.display = bodyType === 'json' ? 'block' : 'none'
             bodyMultipart.style.display = bodyType === 'multipart' ? 'block' : 'none'
@@ -1016,6 +1022,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const bodyNone = document.getElementById('bodyNone')
         const bodyJson = document.getElementById('bodyJson')
         const bodyMultipart = document.getElementById('bodyMultipart')
+
+        // Reset jsonBody when changing body type to prevent leftover content
+        const currentJsonBody = document.getElementById('jsonBody')
+        if (currentJsonBody && currentJsonBody.value) {
+            currentJsonBody.value = ''
+        }
 
         bodyNone.style.display = 'none'
         bodyJson.style.display = 'none'
