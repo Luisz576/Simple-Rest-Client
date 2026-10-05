@@ -922,11 +922,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cookieTokenInput = document.getElementById('cookieTokenInput')
         if (cookieTokenInput) {
             cookieTokenInput.value = config.cookie || ''
-
-            const toggle = document.getElementById('enableCookieToggle')
-            if (toggle) {
-                toggle.checked = (config.cookie || '').length > 0
-            }
         }
 
         // Load body
@@ -1661,21 +1656,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('newFolderBtn').addEventListener('click', createFolder)
     
-    const enableCookieToggle = document.getElementById('enableCookieToggle')
     const loadCookieBtn = document.getElementById('loadCookieBtn')
     const clearSessionBtn = document.getElementById('clearSessionBtn')
-
-    enableCookieToggle.addEventListener('change', (e) => {
-        const cookieInput = document.getElementById('cookieTokenInput')
-        if (e.target.checked) {
-            cookieInput.style.display = 'flex'
-            if (!cookieInput.value) {
-                loadCookieBtn.click()
-            }
-        } else {
-            cookieInput.style.display = 'none'
-        }
-    })
 
     // Environment Variables Dialog
     const envVariablesBtn = document.getElementById('envVariablesBtn')
@@ -1894,7 +1876,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = getCurrentSessionToken()
         if (token) {
             document.getElementById('cookieTokenInput').value = token
-            enableCookieToggle.checked = true
             document.getElementById('cookieTokenInput').style.display = 'flex'
             showSuccess('Session cookie loaded from storage')
         } else {
@@ -1914,7 +1895,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Are you sure you want to clear the session token?')) {
             clearSessionToken()
             document.getElementById('cookieTokenInput').value = ''
-            enableCookieToggle.checked = false
             showSuccess('Session cleared')
         }
     })
