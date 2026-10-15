@@ -1723,17 +1723,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     envVariablesBtn.addEventListener('click', () => {
         renderEnvVars()
-        envDialogOverlay.style.display = 'flex'
+        envDialogOverlay.classList.add('active')
     })
 
     envDialogClose.addEventListener('click', () => {
-        envDialogOverlay.style.display = 'none'
+        envDialogOverlay.classList.remove('active')
         resetEnvStyles()
     })
 
     envDialogOverlay.addEventListener('click', (e) => {
         if (e.target === envDialogOverlay) {
-            envDialogOverlay.style.display = 'none'
+            envDialogOverlay.classList.remove('active')
             resetEnvStyles()
         }
     })
