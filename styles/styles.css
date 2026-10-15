@@ -1934,6 +1934,30 @@ footer a:hover {
     gap: 0.75rem;
 }
 
+.dialog-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.dialog-content::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    margin: 1rem 0;
+    border-radius: 4px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.dialog-content::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+}
+
+.dialog-content::-webkit-scrollbar-corner {
+    background: var(--bg-primary);
+}
+
 .env-buttons {
     display: flex;
     flex-direction: row;
