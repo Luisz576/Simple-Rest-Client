@@ -191,38 +191,71 @@ document.addEventListener('DOMContentLoaded', () => {
     const iconWrapper = document.querySelector('.icon-wrapper')
     const urlTooltip = document.getElementById('urlTooltip')
 
+    function hideTooltip(tooltip) {
+        tooltip.style.display = 'none'
+    }
+
+    function positionTooltip(tooltip, iconEl) {
+        tooltip.style.display = 'block'
+        const wrapperRect = iconEl.closest('.icon-wrapper').getBoundingClientRect()
+        const rect = iconEl.getBoundingClientRect()
+        const tipWidth = tooltip.offsetWidth
+        const tipHeight = tooltip.offsetHeight
+        const top = rect.top - wrapperRect.top + rect.height / 2 - tipHeight / 2
+        let left = rect.right - wrapperRect.left + 10
+        if (left + tipWidth > wrapperRect.width) {
+            left = rect.left - wrapperRect.left - tipWidth - 10
+        }
+        if (left < 0) {
+            left = rect.right - wrapperRect.left + 10
+        }
+        if (top < 0) {
+            tooltip.style.top = (rect.bottom - wrapperRect.top + 10) + 'px'
+        } else {
+            tooltip.style.top = top + 'px'
+        }
+        tooltip.style.left = left + 'px'
+        tooltip.style.margin = '0'
+        tooltip.style.transform = 'none'
+    }
+
+    function showTooltip(tooltip, iconEl) {
+        positionTooltip(tooltip, iconEl)
+        tooltip.style.display = 'block'
+    }
+
     // URL tooltip
     if (iconWrapper && urlTooltip) {
-        urlTooltip.style.display = 'none'
-        iconWrapper.addEventListener('mouseenter', () => urlTooltip.style.display = 'block')
-        iconWrapper.addEventListener('mouseleave', () => urlTooltip.style.display = 'none')
+        hideTooltip(urlTooltip)
+        iconWrapper.addEventListener('mouseenter', () => showTooltip(urlTooltip, iconWrapper))
+        iconWrapper.addEventListener('mouseleave', () => hideTooltip(urlTooltip))
     }
 
     // Query Parameters tooltip
     const queryIconWrapper = document.querySelector('#querySection .icon-wrapper')
     const queryTooltip = document.getElementById('queryTooltip')
     if (queryIconWrapper && queryTooltip) {
-        queryTooltip.style.display = 'none'
-        queryIconWrapper.addEventListener('mouseenter', () => queryTooltip.style.display = 'block')
-        queryIconWrapper.addEventListener('mouseleave', () => queryTooltip.style.display = 'none')
+        hideTooltip(queryTooltip)
+        queryIconWrapper.addEventListener('mouseenter', () => showTooltip(queryTooltip, queryIconWrapper))
+        queryIconWrapper.addEventListener('mouseleave', () => hideTooltip(queryTooltip))
     }
 
     // Headers tooltip
     const headersIconWrapper = document.querySelector('#headersSection .icon-wrapper')
     const headersTooltip = document.getElementById('headersTooltip')
     if (headersIconWrapper && headersTooltip) {
-        headersTooltip.style.display = 'none'
-        headersIconWrapper.addEventListener('mouseenter', () => headersTooltip.style.display = 'block')
-        headersIconWrapper.addEventListener('mouseleave', () => headersTooltip.style.display = 'none')
+        hideTooltip(headersTooltip)
+        headersIconWrapper.addEventListener('mouseenter', () => showTooltip(headersTooltip, headersIconWrapper))
+        headersIconWrapper.addEventListener('mouseleave', () => hideTooltip(headersTooltip))
     }
 
     // Cookie tooltip
     const cookieIconWrapper = document.querySelector('#authSection .icon-wrapper')
     const cookieTooltip = document.getElementById('cookieTooltip')
     if (cookieIconWrapper && cookieTooltip) {
-        cookieTooltip.style.display = 'none'
-        cookieIconWrapper.addEventListener('mouseenter', () => cookieTooltip.style.display = 'block')
-        cookieIconWrapper.addEventListener('mouseleave', () => cookieTooltip.style.display = 'none')
+        hideTooltip(cookieTooltip)
+        cookieIconWrapper.addEventListener('mouseenter', () => showTooltip(cookieTooltip, cookieIconWrapper))
+        cookieIconWrapper.addEventListener('mouseleave', () => hideTooltip(cookieTooltip))
     }
 
     function closeDrawer(){
@@ -233,6 +266,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleDrawer() {
         drawer.classList.toggle('open')
         overlay.classList.toggle('active')
+    }
+
+    function setLoading(loading) {
+        submitBtn.classList.toggle('is-loading', loading)
+        const textEl = submitBtn.querySelector('.submit-btn-text')
+        if (textEl) textEl.textContent = loading ? 'Sending...' : 'Send Request'
+        submitBtn.disabled = loading
     }
 
     function getCurrentSessionToken() {
@@ -1460,6 +1500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.addEventListener('click', async (e) => {
         if (validate()) {
             e.preventDefault()
+            setLoading(true)
             const method = methodInput.value
             const url = urlInput.value.trim()
             const processedUrl = processEnvVarsInString(url)
@@ -1553,6 +1594,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 saveResponseToHistory(errHis)
                 displayResponse(errHis)
+            } finally {
+                setLoading(false)
             }
         }
     })
