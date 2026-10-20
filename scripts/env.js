@@ -8,7 +8,7 @@ const envList = document.getElementById('envList')
 // Export/Import Environment Variables
 function exportEnvVars() {
     try {
-        const envVars = app.appDb.getEnvVars()
+        const envVars = app.appDb.getEnvVars(app.currentProfileId)
         const data = {
             version: 1,
             envVars: envVars
@@ -60,7 +60,7 @@ function importEnvVars(event) {
             }
             
             // Clear existing and import new vars
-            app.appDb.saveEnvVars(importedVars)
+            app.appDb.saveEnvVars(importedVars, app.currentProfileId)
             app.envVars = importedVars
             renderEnvVars()
             showSuccess(`Successfully imported ${importedVars.length} environment variable(s)`)
@@ -265,14 +265,17 @@ function resetEnvStyles() {
 
 // Save environment variables to AppDB
 function saveEnvVars() {
-    app.appDb.saveEnvVars(app.envVars)
+    app.appDb.saveEnvVars(app.envVars, app.currentProfileId)
 }
 
 // Initialize environment variables from AppDB
 function initEnvVars() {
-    const loadedEnvVars = app.appDb.getEnvVars()
+    const loadedEnvVars = app.appDb.getEnvVars(app.currentProfileId)
     if (loadedEnvVars && loadedEnvVars.length > 0) {
         app.envVars = loadedEnvVars
+        renderEnvVars()
+    } else {
+        app.envVars = []
         renderEnvVars()
     }
 }

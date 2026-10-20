@@ -19,7 +19,7 @@ const drawerToggle = document.getElementById('drawerToggle')
 const drawerContent = document.querySelector('.drawer-content')
 
 function saveSavedRequests() {
-    app.appDb.saveSavedRequests(app.savedRequests)
+    app.appDb.saveSavedRequests(app.savedRequests, app.currentProfileId)
 }
 
 function addNewRequest() {
@@ -165,7 +165,7 @@ function initSavedRequests() {
         app.savedRequests = [
             { id: getNewId(), name: 'default', pos_index: 0, folder_id: null, config: { method: 'GET', url: '', params: {}, headers: {}, body: { type: 'none', content: null } } }
         ]
-        app.appDb.saveSavedRequests(app.savedRequests)
+        app.appDb.saveSavedRequests(app.savedRequests, app.currentProfileId)
         app.currentSelectedRequest =app.savedRequests[0]
         loadRequest(app.savedRequests[0].id)
     }
@@ -985,7 +985,7 @@ function deleteFolder(folderId) {
     let fPos = 1
     folders.forEach(f => f.order = fPos++)
     app.appDb.saveFolders(folders)
-    app.appDb.saveSavedRequests(app.savedRequests)
+    app.appDb.saveSavedRequests(app.savedRequests, app.currentProfileId)
     
     // Update app.currentSelectedRequest if it was in the deleted folder
     if (app.currentSelectedRequest && app.currentSelectedRequest.folder_id === folderId) {
@@ -1229,7 +1229,7 @@ function importRequests() {
                 }
 
                 if (confirm(`Import ${app.savedRequests.length} requests? This will replace existing requests.`)) {
-                    app.appDb.saveSavedRequests(app.savedRequests)
+                    app.appDb.saveSavedRequests(app.savedRequests, app.currentProfileId)
                     renderDrawerItems()
                     showSuccess('Requests and folders imported successfully!')
                 }
