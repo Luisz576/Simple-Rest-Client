@@ -66,6 +66,13 @@
             <h1>Simple REST Client</h1>
             <div class="header-right">
                 <div class="header-actions">
+                    <button type="button" class="profiles-btn" id="profilesBtn" aria-label="Profiles">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Profiles
+                    </button>
                     <button type="button" class="history-btn" id="historyBtn" aria-label="History">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -360,6 +367,29 @@
                 </a>
             </p>
         </footer>
+    </div>
+
+    <!-- Profiles Dialog -->
+    <div class="dialog-overlay" id="profilesDialogOverlay">
+        <div class="dialog" id="profilesDialog">
+            <div class="dialog-header">
+                <h2>Profiles</h2>
+                <button type="button" class="dialog-close" id="profilesDialogClose">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="dialog-content">
+                <div class="profiles-list" id="profilesList">
+                    <!-- Profiles will be rendered here -->
+                </div>
+                <div class="profiles-actions">
+                    <button type="button" class="dialog-btn save-btn" id="addProfileBtn">Add Profile</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- History Drawer (Right Sidebar) -->

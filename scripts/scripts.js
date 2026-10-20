@@ -4,7 +4,8 @@ const restClient = new RestClient()
 let savedRequests = []
 let currentSelectedRequest = null
 let envVars = []
-let folders = []
+let profiles = []
+let currentProfileId = null
 let expandedFolders = new Set()
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1735,6 +1736,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === envDialogOverlay) {
             envDialogOverlay.classList.remove('active')
             resetEnvStyles()
+        }
+    })
+
+    // Profiles Dialog
+    const profilesBtn = document.getElementById('profilesBtn')
+    const profilesDialogOverlay = document.getElementById('profilesDialogOverlay')
+    const profilesDialogClose = document.getElementById('profilesDialogClose')
+
+    profilesBtn.addEventListener('click', () => {
+        profilesDialogOverlay.classList.add('active')
+    })
+
+    profilesDialogClose.addEventListener('click', () => {
+        profilesDialogOverlay.classList.remove('active')
+    })
+
+    profilesDialogOverlay.addEventListener('click', (e) => {
+        if (e.target === profilesDialogOverlay) {
+            profilesDialogOverlay.classList.remove('active')
         }
     })
 
