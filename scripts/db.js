@@ -2,13 +2,19 @@ const SAVED_REQUESTS_KEY = "rest_client_requests"
 const ENVIRONMENT_VARS_KEY = "rest_client_env_vars"
 const FOLDERS_KEY = "rest_client_folders"
 const HISTORY_KEY = "rest_client_history"
+const PROFILES_KEY = "rest_client_profiles"
+const CURRENT_PROFILE_ID_KEY = "rest_client_current_profile_id"
 const MAX_HISTORY = 100
 
 class AppDB {
-    saveSavedRequests(data) {
+    _getKey(baseKey, profileId) {
+        return profileId ? `${baseKey}_${profileId}` : baseKey;
+    }
+
+    saveSavedRequests(data, profileId = null) {
         try {
             let sortedData = this._sort(data)
-            localStorage.setItem(SAVED_REQUESTS_KEY, JSON.stringify(sortedData))
+            localStorage.setItem(this._getKey(SAVED_REQUESTS_KEY, profileId), JSON.stringify(sortedData))
             return true
         } catch (e) {
             console.error('Error saving to localStorage:', e)
@@ -16,10 +22,10 @@ class AppDB {
         }
     }
 
-    getSavedRequests() {
+    getSavedRequests(profileId = null) {
         try {
-            const data = localStorage.getItem(SAVED_REQUESTS_KEY)
-            if (String(data) != "undefined") {
+            const data = localStorage.getItem(this._getKey(SAVED_REQUESTS_KEY, profileId))
+            if (data !== null && data !== "undefined") {
                 return this._sort(JSON.parse(data))
             }
             return null
@@ -29,9 +35,9 @@ class AppDB {
         }
     }
 
-    saveFolders(data) {
+    saveFolders(data, profileId = null) {
         try {
-            localStorage.setItem(FOLDERS_KEY, JSON.stringify(data))
+            localStorage.setItem(this._getKey(FOLDERS_KEY, profileId), JSON.stringify(data))
             return true
         } catch (e) {
             console.error('Error saving folders:', e)
@@ -39,9 +45,9 @@ class AppDB {
         }
     }
 
-    getFolders() {
+    getFolders(profileId = null) {
         try {
-            const data = localStorage.getItem(FOLDERS_KEY)
+            const data = localStorage.getItem(this._getKey(FOLDERS_KEY, profileId))
             if (data) {
                 const parsed = JSON.parse(data)
                 if (Array.isArray(parsed)) {
@@ -55,9 +61,9 @@ class AppDB {
         }
     }
 
-    saveEnvVars(data) {
+    saveEnvVars(data, profileId = null) {
         try {
-            localStorage.setItem(ENVIRONMENT_VARS_KEY, JSON.stringify(data))
+            localStorage.setItem(this._getKey(ENVIRONMENT_VARS_KEY, profileId), JSON.stringify(data))
             return true
         } catch (e) {
             console.error('Error saving environment variables:', e)
@@ -65,11 +71,11 @@ class AppDB {
         }
     }
 
-    getEnvVars() {
+    getEnvVars(profileId = null) {
         try {
-            const data = localStorage.getItem(ENVIRONMENT_VARS_KEY)
+            const data = localStorage.getItem(this._getKey(ENVIRONMENT_VARS_KEY, profileId))
             if (data) {
-                let i
+                let i = 0
                 const parsed = JSON.parse(data)
                 // Ensure all env vars have id
                 return parsed.map(env => ({
@@ -85,6 +91,7 @@ class AppDB {
     }
 
     _sort(dataPos) {
+        if (!dataPos) return []
         let sortedData = [...dataPos]
 
         const withIndex = sortedData.filter(req => req.pos_index !== undefined && req.pos_index !== null)
@@ -101,9 +108,9 @@ class AppDB {
         return sortedData
     }
 
-    saveHistory(data) {
+    saveHistory(data, profileId = null) {
         try {
-            const existing = this.getHistory()
+            const existing = this.getHistory(profileId)
             const newData = [...data, ...existing]
 
             // Limit to MAX_HISTORY (100 items)
@@ -111,7 +118,7 @@ class AppDB {
                 newData.splice(MAX_HISTORY)
             }
 
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(newData))
+            localStorage.setItem(this._getKey(HISTORY_KEY, profileId), JSON.stringify(newData))
             return newData
         } catch (e) {
             console.error('Error saving history:', e)
@@ -119,7 +126,7 @@ class AppDB {
         }
     }
 
-    saveLikeThisHistory(data) {
+    saveLikeThisHistory(data, profileId = null) {
         try {
             const newData = [...data]
 
@@ -128,7 +135,7 @@ class AppDB {
                 newData.splice(MAX_HISTORY)
             }
 
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(newData))
+            localStorage.setItem(this._getKey(HISTORY_KEY, profileId), JSON.stringify(newData))
             return newData
         } catch (e) {
             console.error('Error saving history:', e)
@@ -136,19 +143,19 @@ class AppDB {
         }
     }
 
-    clearHistory() {
+    clearHistory(profileId = null) {
         try {
-            localStorage.setItem(HISTORY_KEY, JSON.stringify([]))
+            localStorage.setItem(this._getKey(HISTORY_KEY, profileId), JSON.stringify([]))
             return true
         } catch (e) {
-            console.error('Error saving history:', e)
+            console.error('Error clearing history:', e)
             return false
         }
     }
 
-    getHistory() {
+    getHistory(profileId = null) {
         try {
-            const data = localStorage.getItem(HISTORY_KEY)
+            const data = localStorage.getItem(this._getKey(HISTORY_KEY, profileId))
             if (data) {
                 const parsed = JSON.parse(data)
                 if (Array.isArray(parsed)) {
@@ -161,5 +168,52 @@ class AppDB {
             return []
         }
     }
-}
 
+    // Profile management
+    getProfiles() {
+        try {
+            const data = localStorage.getItem(PROFILES_KEY)
+            if (data) {
+                return JSON.parse(data)
+            }
+            return []
+        } catch (e) {
+            console.error('Error retrieving profiles:', e)
+            return []
+        }
+    }
+
+    saveProfiles(profiles) {
+        try {
+            localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles))
+            return true
+        } catch (e) {
+            console.error('Error saving profiles:', e)
+            return false
+        }
+    }
+
+    getCurrentProfileId() {
+        try {
+            const id = localStorage.getItem(CURRENT_PROFILE_ID_KEY)
+            return id ? id : null
+        } catch (e) {
+            console.error('Error retrieving current profile ID:', e)
+            return null
+        }
+    }
+
+    setCurrentProfileId(id) {
+        try {
+            if (id) {
+                localStorage.setItem(CURRENT_PROFILE_ID_KEY, id)
+            } else {
+                localStorage.removeItem(CURRENT_PROFILE_ID_KEY)
+            }
+            return true
+        } catch (e) {
+            console.error('Error setting current profile ID:', e)
+            return false
+        }
+    }
+}

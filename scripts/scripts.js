@@ -2,10 +2,10 @@ const appDb = new AppDB()
 const restClient = new RestClient()
 
 let savedRequests = []
+let currentProfileId = null
 let currentSelectedRequest = null
 let envVars = []
 let profiles = []
-let currentProfileId = null
 let expandedFolders = new Set()
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -157,7 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initSavedRequests() {
-        const data = appDb.getSavedRequests()
+        currentProfileId = appDb.getCurrentProfileId()
+        const data = appDb.getSavedRequests(currentProfileId)
         if (data && data != null && data.length > 0) {
             savedRequests = data
             savedRequests.forEach(req => {
