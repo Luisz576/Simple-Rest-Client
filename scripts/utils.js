@@ -7,6 +7,10 @@ function getNewIndex(savedRequests) {
     return maxIndex + 1;
 }
 
+function getCopyName(name){
+    return name.substring(0, Math.min(19, name.length)) + " Copy"
+}
+
 function getCopyName(name) {
     return name.substring(0, Math.min(19, name.length)) + " Copy";
 }

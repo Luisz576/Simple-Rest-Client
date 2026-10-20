@@ -58,7 +58,7 @@ document.addEventListener('keydown', (e) => {
 
 function clearHistory() {
     if (confirm('Are you sure you want to clear history?')) {
-        appDb.clearHistory()
+        app.appDb.clearHistory()
         renderHistoryItems()
     }
 }
@@ -77,7 +77,7 @@ function saveResponseToHistory(response) {
         error: response.error
     }
     
-    appDb.saveHistory([historyItem])
+    app.appDb.saveHistory([historyItem])
 }
 
 function renderHistoryItems() {
@@ -88,7 +88,7 @@ function renderHistoryItems() {
     // Clear existing items
     container.innerHTML = ''
     
-    const history = appDb.getHistory()
+    const history = app.appDb.getHistory()
     
     if (history.length === 0) {
         container.innerHTML = `
@@ -185,8 +185,8 @@ function renderHistoryItems() {
 }
 
 function removeHistoryItem(id) {
-    const history = appDb.getHistory()
+    const history = app.appDb.getHistory()
     const filteredHistory = history.filter(item => item.id !== id)
-    appDb.saveLikeThisHistory(filteredHistory)
+    app.appDb.saveLikeThisHistory(filteredHistory)
     renderHistoryItems()
 }
