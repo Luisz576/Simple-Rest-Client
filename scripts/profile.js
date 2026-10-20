@@ -109,7 +109,13 @@ function editProfile(id) {
 function deleteProfile(id) {
     const profile = app.profiles.find(p => p.id === id);
     if (profile && app.profiles.length > 1) {
-        if (confirm(`Are you sure you want to delete the profile "${profile.name}"?`)) {
+        if (confirm(`Are you sure you want to delete the profile "${profile.name}"? This will also delete all associated history, environment variables, requests, and folders for this profile.`)) {
+            // Clean up profile-specific data
+            app.appDb.clearHistory(id);
+            app.appDb.clearFolders(id);
+            app.appDb.clearEnvVars(id);
+            app.appDb.clearSavedRequests(id);
+
             app.profiles = app.profiles.filter(p => p.id !== id);
             app.appDb.saveProfiles(app.profiles);
             
@@ -124,7 +130,7 @@ function deleteProfile(id) {
             }
 
             renderProfiles();
-            showSuccess('Profile deleted successfully', 'success');
+            showSuccess('Profile and associated data deleted successfully', 'success');
         }
     } else if (app.profiles.length <= 1) {
         showWarning('You cannot delete the last profile.');

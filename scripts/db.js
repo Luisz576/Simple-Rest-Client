@@ -145,10 +145,40 @@ class AppDB {
 
     clearHistory(profileId = null) {
         try {
-            localStorage.setItem(this._getKey(HISTORY_KEY, profileId), JSON.stringify([]))
+            localStorage.removeItem(this._getKey(HISTORY_KEY, profileId))
             return true
         } catch (e) {
             console.error('Error clearing history:', e)
+            return false
+        }
+    }
+
+    clearSavedRequests(profileId = null) {
+        try {
+            localStorage.removeItem(this._getKey(SAVED_REQUESTS_KEY, profileId))
+            return true
+        } catch (e) {
+            console.error('Error clearing saved requests:', e)
+            return false
+        }
+    }
+
+    clearFolders(profileId = null) {
+        try {
+            localStorage.removeItem(this._getKey(FOLDERS_KEY, profileId))
+            return true
+        } catch (e) {
+            console.error('Error clearing folders:', e)
+            return false
+        }
+    }
+
+    clearEnvVars(profileId = null) {
+        try {
+            localStorage.removeItem(this._getKey(ENVIRONMENT_VARS_KEY, profileId))
+            return true
+        } catch (e) {
+            console.error('Error clearing environment variables:', e)
             return false
         }
     }
