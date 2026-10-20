@@ -329,7 +329,7 @@ function renderDrawerItems() {
             folders = foldersArr
             let fPos = 1
             folders.forEach(f => f.order = fPos++)
-            app.appDb.saveFolders(folders)
+            app.appDb.saveFolders(folders, app.currentProfileId)
             renderDrawerItems()
             showSuccess('Folder order updated')
         })
@@ -372,7 +372,7 @@ function renderDrawerItems() {
             folders = foldersArr
             let fPos = 1
             folders.forEach(f => f.order = fPos++)
-            app.appDb.saveFolders(folders)
+            app.appDb.saveFolders(folders, app.currentProfileId)
             renderDrawerItems()
             showSuccess('Folder order updated')
         })
@@ -927,7 +927,7 @@ function editRequestName(id) {
 }
 
 function loadFolders() {
-    folders = app.appDb.getFolders()
+    folders = app.appDb.getFolders(app.currentProfileId)
 }
 
 function updateFolderOrderButtons() {
@@ -957,7 +957,7 @@ function editFolderName(folderId) {
             return
         }
         folder.name = trimmedName
-        app.appDb.saveFolders(folders)
+        app.appDb.saveFolders(folders, app.currentProfileId)
         renderDrawerItems()
         updateFolderOrderButtons()
         showSuccess('Folder name updated')
@@ -984,7 +984,7 @@ function deleteFolder(folderId) {
     folders = folders.filter(f => f.id !== folderId)
     let fPos = 1
     folders.forEach(f => f.order = fPos++)
-    app.appDb.saveFolders(folders)
+    app.appDb.saveFolders(folders, app.currentProfileId)
     app.appDb.saveSavedRequests(app.savedRequests, app.currentProfileId)
     
     // Update app.currentSelectedRequest if it was in the deleted folder
@@ -1209,7 +1209,7 @@ function importRequests() {
                 if (importedData.version === 2) {
                     if (importedData.folders && Array.isArray(importedData.folders)) {
                         folders = importedData.folders
-                        app.appDb.saveFolders(folders)
+                        app.appDb.saveFolders(folders, app.currentProfileId)
                     }
                     if (importedData.requests && Array.isArray(importedData.requests)) {
                         app.savedRequests = importedData.requests
@@ -1257,7 +1257,7 @@ function createFolder() {
                 const newId = Date.now()
                 const newFolder = { id: newId, name: finalName, order: folders.length + 1 }
                 folders.push(newFolder)
-                app.appDb.saveFolders(folders)
+                app.appDb.saveFolders(folders, app.currentProfileId)
                 renderDrawerItems()
                 showSuccess('Folder created successfully!')
             }
@@ -1265,7 +1265,7 @@ function createFolder() {
             const newId = Date.now()
             const newFolder = { id: newId, name: trimmedName, order: folders.length + 1 }
             folders.push(newFolder)
-            app.appDb.saveFolders(folders)
+            app.appDb.saveFolders(folders, app.currentProfileId)
             renderDrawerItems()
             updateFolderOrderButtons()
             showSuccess('Folder created successfully!')
