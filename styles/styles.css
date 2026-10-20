@@ -2217,6 +2217,158 @@ footer a:hover {
     min-width: 120px;
 }
 
+/* Profiles Styles */
+.profile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.profile-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, var(--bg-secondary) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.profile-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+}
+
+.profile-item.active .profile-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.profile-actions button {
+    background: transparent;
+    border: none;
+    padding: 0.4rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.profile-actions button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.profile-actions .select-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .edit-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .delete-profile-btn:hover {
+    color: var(--error-color);
+}
+
+
+/* Profiles Styles */
+.profile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.profile-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, var(--bg-secondary) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.profile-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+}
+
+.profile-item.active .profile-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.profile-actions button {
+    background: transparent;
+    border: none;
+    padding: 0.4rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.profile-actions button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.profile-actions .select-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .edit-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .delete-profile-btn:hover {
+    color: var(--error-color);
+}
+
+
 .profiles-list {
     margin-top: 1rem;
     display: flex;
@@ -2234,3 +2386,155 @@ footer a:hover {
     width: auto;
     min-width: 120px;
 }
+
+/* Profiles Styles */
+.profile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.profile-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, var(--bg-secondary) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.profile-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+}
+
+.profile-item.active .profile-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.profile-actions button {
+    background: transparent;
+    border: none;
+    padding: 0.4rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.profile-actions button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.profile-actions .select-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .edit-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .delete-profile-btn:hover {
+    color: var(--error-color);
+}
+
+
+/* Profiles Styles */
+.profile-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+}
+
+.profile-item.active {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, var(--bg-secondary) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.profile-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+}
+
+.profile-item.active .profile-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.profile-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.profile-actions button {
+    background: transparent;
+    border: none;
+    padding: 0.4rem;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.profile-actions button:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.profile-actions .select-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .edit-profile-btn:hover {
+    color: var(--primary-color);
+}
+
+.profile-actions .delete-profile-btn:hover {
+    color: var(--error-color);
+}
+

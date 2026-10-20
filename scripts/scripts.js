@@ -131,7 +131,7 @@ function getCurrentRequestConfig() {
 }
 
 function saveRequest() {
-    if (!currentSelectedRequest) {
+    if (!app.currentSelectedRequest) {
         showWarning('No request selected')
         return
     }
@@ -153,7 +153,6 @@ function saveRequest() {
 }
 
 function initSavedRequests() {
-    app.currentProfileId = app.appDb.getCurrentProfileId()
     const data = app.appDb.getSavedRequests(app.currentProfileId)
     if (data && data != null && data.length > 0) {
         app.savedRequests = data
